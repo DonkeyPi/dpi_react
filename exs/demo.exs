@@ -1,6 +1,3 @@
-# Ash.React
-
-```elixir
 # mix run exs/demo.exs
 
 defmodule Demo do
@@ -22,4 +19,3 @@ end
 alias Ash.Tui.Gtk3
 opts = [width: 800, height: 480, title: "Demo"]
 Demo.run_and_wait(Gtk3, opts)
-```
