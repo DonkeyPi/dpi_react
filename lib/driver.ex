@@ -5,8 +5,11 @@ defmodule Ash.React.Driver do
 
   # Starts the driver process with an initial dims.
   # The caller pid will receive the event messages.
-  @callback start_link(width :: integer(), height :: integer(), title :: binary()) ::
-              {:ok, driver :: pid()}
+  # Mandatory opts:
+  #   width::integer()
+  #   height::integer()
+  #   title::binary()
+  @callback start_link(opts :: keyword()) :: {:ok, driver :: pid()}
 
   # Dom versioning required to deal with
   # the asych nature of the events round trip
@@ -20,12 +23,19 @@ defmodule Ash.React.Driver do
 
   # This handler may not use passed dom at all
   # or may call a generic dom node locator.
-  @callback handle(driver :: pid(), dom :: map(), event :: any()) :: :ok
+  # Mandatory args:
+  #   curr::keyword()
+  #   event::any()
+  @callback handle(driver :: pid(), args :: keyword()) :: :ok
 
   # push the updated dom to the screen
-  @callback render(driver :: pid(), prev :: map(), next :: map(), diff :: map()) :: :ok
+  # Mandatory args:
+  #   curr::keyword()
+  #   next::keyword()
+  #   diff::keyword()
+  @callback render(driver :: pid(), args :: keyword()) :: :ok
 
-  def start_link(module, width, height, title), do: module.start_link(width, height, title)
-  def handle({module, pid}, dom, event), do: module.handle(pid, dom, event)
-  def render({module, pid}, prev, next, diff), do: module.render(pid, prev, next, diff)
+  def start_link(module, opts), do: module.start_link(opts)
+  def handle({module, pid}, args), do: module.handle(pid, args)
+  def render({module, pid}, args), do: module.render(pid, args)
 end

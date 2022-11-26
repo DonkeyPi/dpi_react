@@ -17,16 +17,17 @@ defmodule Ash.React.App do
   # Reliable code should not depend
   # on proper on exit effects cleanup.
   # Port drivers may die at any time.
-  def loop(driver = {_, pid}, one, state, prev, func, opts) do
+  def loop(driver = {_, pid}, one, state, curr, func, opts) do
     receive do
       {:event, ^pid, event} ->
         if one != nil, do: one.(event)
+        args = [curr: curr, event: event]
         # React state updated in place.
-        :ok = Driver.handle(driver, prev, event)
+        :ok = Driver.handle(driver, args)
         next = eval(state, func, opts)
-        diff = diff(state, prev, next)
-        cleanup(state, prev, next, diff)
-        :ok = Driver.render(driver, prev, next, diff)
+        diff = diff(state, curr, next)
+        cleanup(state, curr, next, diff)
+        :ok = Driver.render(driver, diff: diff | args)
 
         loop(driver, one, state, next, func, opts)
 
@@ -46,17 +47,17 @@ defmodule Ash.React.App do
   end
 
   # Calculates the doms difference.
-  def diff(state, prev, next) do
+  def diff(state, curr, next) do
     unused(state)
-    unused(prev)
+    unused(curr)
     unused(next)
     raise "not implemented yet"
   end
 
   # Applies use effect cleanups.
-  def cleanup(state, prev, next, diff) do
+  def cleanup(state, curr, next, diff) do
     unused(state)
-    unused(prev)
+    unused(curr)
     unused(next)
     unused(diff)
     raise "not implemented yet"
