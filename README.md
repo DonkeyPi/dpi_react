@@ -1,4 +1,4 @@
-# Ash.React
+# Athasha React
 
 ```elixir
 # mix run exs/demo.exs
