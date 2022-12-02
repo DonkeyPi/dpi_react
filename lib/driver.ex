@@ -28,7 +28,7 @@ defmodule Ash.React.Driver do
   #   event::any()
   @callback handle(driver :: pid(), args :: keyword()) :: :ok
 
-  # push the updated dom to the screen
+  # Push the updated dom to the screen.
   # Mandatory args:
   #   curr::keyword()
   #   next::keyword()

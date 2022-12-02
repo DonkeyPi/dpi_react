@@ -16,6 +16,14 @@ defmodule Demo do
   end
 end
 
-alias Ash.Tui.Gtk3
-opts = [width: 800, height: 480, title: "Demo"]
-Demo.run_and_wait(Gtk3, opts)
+alias Ash.Tui.Drv
+
+opts = [
+  cols: "100",
+  rows: "30",
+  bgcolor: "404040",
+  fontpt: "12.8",
+  title: "Demo"
+]
+
+Demo.run_and_wait(Drv, opts)
