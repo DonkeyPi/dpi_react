@@ -2,78 +2,93 @@ defmodule Ash.React do
   alias Ash.React.State
 
   defmacro __using__(opts) do
-    quote do
-      use Ash.Node
-      import Ash.React
+    case Keyword.get(opts, :app, false) do
+      true ->
+        quote do
+          use Ash.Node
+          import Ash.React
+          import Ash.React.App, only: [run: 2]
 
-      opts = unquote(opts)
+          def child_spec(opts) do
+            %{
+              id: __MODULE__,
+              start: {__MODULE__, :start_link, [opts]},
+              restart: :permanent,
+              type: :worker,
+              shutdown: 500
+            }
+          end
 
-      if Keyword.get(opts, :app, false) do
-        import Ash.React.App, only: [run: 2]
+          def start_link(opts \\ []) do
+            alias Ash.React.App
+            alias Ash.React.Driver
+            # Extract app options.
+            {driver, opts} = Keyword.pop!(opts, :driver)
+            # Supervisor restart strategy.
+            {delay, opts} = Keyword.pop(opts, :delay, 0)
+            :timer.sleep(delay)
 
-        def child_spec(opts) do
-          %{
-            id: __MODULE__,
-            start: {__MODULE__, :start_link, [opts]},
-            restart: :permanent,
-            type: :worker,
-            shutdown: 500
-          }
-        end
+            pid =
+              spawn_link(fn ->
+                # Pass on driver options.
+                driver = Driver.start(driver, opts)
+                # Init is the user defined function that calls run.
+                # Returned options are driver specific.
+                # TUI drivers have the following mandatory options:
+                # - Title
+                # - Cols and Rows in characters
+                # GUI drivers have the following mandatory options:
+                # - Title
+                # - Width and Height in pixels
+                Driver.opts(driver)
+                |> Keyword.put(:driver, driver)
+                |> init()
+              end)
 
-        def start_link(opts \\ []) do
-          alias Ash.React.App
-          alias Ash.React.Driver
-          {driver, opts} = Keyword.pop!(opts, :driver)
-          # Pass title and dimensions to app.
-          title = Keyword.fetch!(opts, :title)
-          width = Keyword.fetch!(opts, :width)
-          height = Keyword.fetch!(opts, :height)
-          # Supervisor restart strategy.
-          {delay, opts} = Keyword.pop(opts, :delay, 0)
-          :timer.sleep(delay)
+            {:ok, pid}
+          end
 
-          spawn_link(fn ->
-            {:ok, pid} = Driver.start_link(driver, width, height, title)
-            opts = Keyword.replace!(opts, :driver, {driver, pid})
-            # Init is the user defined function that calls run.
-            App.init(driver, opts)
-          end)
-        end
+          # Use monitor to avoid setting/restoring trap_exit.
+          # Use monitor for stop to work from unlinked process.
+          def stop(pid, toms \\ 5000) do
+            ref = Process.monitor(pid)
 
-        # Use monitor to avoid setting/restoring trap_exit.
-        # Use monitor for stop to work from unlinked process.
-        def stop(pid, toms \\ 5000) do
-          ref = Process.monitor(pid)
+            # Attempt a clean stop.
+            send(pid, :stop)
 
-          # Attempt a clean stop.
-          send(pid, :stop)
+            # Reliable code should not depend
+            # on proper on exit effects cleanup.
+            receive do
+              {:DOWN, ^ref, :process, ^pid, reason} -> reason
+            after
+              toms ->
+                Process.unlink(pid)
+                Process.demonitor(pid, ref)
+                Process.exit(pid, :kill)
+                :kill
+            end
+          end
 
-          # Reliable code should not depend
-          # on proper on exit effects cleanup.
-          receive do
-            {:DOWN, ^ref, :process, ^pid, reason} -> reason
-          after
-            toms ->
-              Process.unlink(pid)
-              Process.demonitor(pid, ref)
-              Process.exit(pid, :kill)
-              :kill
+          # Use monitor to avoid setting/restoring trap_exit.
+          def run_and_wait(driver, opts) do
+            {:ok, pid} =
+              Keyword.put(opts, :driver, driver)
+              |> start_link()
+
+            ref = Process.monitor(pid)
+
+            receive do
+              {:DOWN, ^ref, :process, ^pid, reason} -> reason
+              msg -> raise "unexpected #{inspect(msg)}"
+            end
           end
         end
 
-        # Use monitor to avoid setting/restoring trap_exit.
-        def run_and_wait(driver, opts) do
-          opts = Keyword.put(opts, :driver, driver)
-          {:ok, pid} = start_link(opts)
-          ref = Process.monitor(pid)
-
-          receive do
-            {:DOWN, ^ref, :process, ^pid, reason} -> reason
-            msg -> raise "unexpected #{inspect(msg)}"
-          end
+      _ ->
+        quote do
+          use Ash.Node
+          import Ash.React
         end
-      end
     end
   end
 

@@ -9,16 +9,18 @@ defmodule Demo do
     run(&main/2, Keyword.put(opts, :on_event, on_event))
   end
 
-  def main(_react, %{width: width, height: height}) do
-    node :main, Panel, width: width, height: height do
+  def main(_react, %{cols: cols, rows: rows}) do
+    node :main, Panel, size: {cols, rows} do
       node(:label, Label, text: "Demo")
     end
   end
 end
 
-alias Ash.Tui.Drv
+alias Ash.Tui.Driver
+alias Ash.Tui.Scr.Screen
 
 opts = [
+  screen: Screen,
   cols: "100",
   rows: "30",
   bgcolor: "404040",
@@ -26,4 +28,4 @@ opts = [
   title: "Demo"
 ]
 
-Demo.run_and_wait(Drv, opts)
+Demo.run_and_wait(Driver, opts)

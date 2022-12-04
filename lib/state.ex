@@ -19,7 +19,8 @@ defmodule Ash.React.State do
           ceffects: %{},
           shortcut: %{},
           timers: %{},
-          timerc: 0
+          timerc: 0,
+          modal: nil
         }
       end)
 
@@ -106,7 +107,8 @@ defmodule Ash.React.State do
           ceffects: map.ceffects,
           shortcut: %{},
           timers: map.timers,
-          timerc: map.timerc
+          timerc: map.timerc,
+          modal: nil
         }
       end)
   end
@@ -243,6 +245,17 @@ defmodule Ash.React.State do
         Map.pop(timers, id)
       end)
     end)
+  end
+
+  def set_modal(agent, key) do
+    :ok =
+      Agent.update(agent, fn map ->
+        Map.put(map, :modal, key)
+      end)
+  end
+
+  def get_modal(agent) do
+    Agent.get(agent, fn map -> Map.get(map, :modal) end)
   end
 
   def stop(agent) do

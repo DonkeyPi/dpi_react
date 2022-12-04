@@ -9,7 +9,14 @@ defmodule Ash.React.Driver do
   #   width::integer()
   #   height::integer()
   #   title::binary()
-  @callback start_link(opts :: keyword()) :: {:ok, driver :: pid()}
+  @callback start(opts :: keyword()) :: state :: any()
+
+  # Extract the initialized option from opaque state.
+  @callback opts(state :: any()) :: opts :: keyword()
+  @callback tree(state :: any()) :: tree :: map()
+
+  # Extract the initialized option from opaque state.
+  @callback handles?(state :: any(), msg :: any()) :: true | false
 
   # Dom versioning required to deal with
   # the asych nature of the events round trip
@@ -24,18 +31,19 @@ defmodule Ash.React.Driver do
   # This handler may not use passed dom at all
   # or may call a generic dom node locator.
   # Mandatory args:
-  #   curr::keyword()
+  #   dom::keyword()
   #   event::any()
-  @callback handle(driver :: pid(), args :: keyword()) :: :ok
+  @callback handle(state :: any(), event :: any()) :: :ok
 
   # Push the updated dom to the screen.
   # Mandatory args:
-  #   curr::keyword()
-  #   next::keyword()
-  #   diff::keyword()
-  @callback render(driver :: pid(), args :: keyword()) :: :ok
+  #   dom::keyword()
+  @callback render(state :: any(), dom :: keyword()) :: :ok
 
-  def start_link(module, opts), do: module.start_link(opts)
-  def handle({module, pid}, args), do: module.handle(pid, args)
-  def render({module, pid}, args), do: module.render(pid, args)
+  def start(module, opts), do: {module, module.start(opts)}
+  def opts({module, state}), do: module.opts(state)
+  def tree({module, state}), do: module.tree(state)
+  def handles?({module, state}, msg), do: module.handles?(state, msg)
+  def handle({module, state}, event), do: module.handle(state, event)
+  def render({module, state}, dom), do: {module, module.render(state, dom)}
 end

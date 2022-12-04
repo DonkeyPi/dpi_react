@@ -1,8 +1,6 @@
 # AppShell React
 
 ```elixir
-# mix run exs/demo.exs
-
 defmodule Demo do
   use Ash.React, app: true
   use Ash.Tui
@@ -19,7 +17,7 @@ defmodule Demo do
   end
 end
 
-alias Ash.Tui.Gtk3
+alias Ash.Tui.Driver
 opts = [width: 800, height: 480, title: "Demo"]
-Demo.run_and_wait(Gtk3, opts)
+Demo.run_and_wait(Driver, opts)
 ```
