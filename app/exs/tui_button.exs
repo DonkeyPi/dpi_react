@@ -1,4 +1,4 @@
-# mix run exs/demo.exs
+# mix run exs/tui_button.exs
 
 defmodule Demo do
   use Ash.React, app: true
@@ -11,7 +11,7 @@ defmodule Demo do
 
   def main(_react, %{cols: cols, rows: rows}) do
     node :main, Panel, size: {cols, rows} do
-      node(:label, Label, text: "Demo")
+      node(:button, Button, text: "Demo", on_click: fn -> log("Clicked") end)
     end
   end
 end
@@ -21,10 +21,10 @@ alias Ash.Tui.Scr.Screen
 
 opts = [
   screen: Screen,
-  cols: "100",
   rows: "30",
-  bgcolor: "404040",
+  cols: "100",
   fontpt: "12.8",
+  bgcolor: "404040",
   title: "Demo"
 ]
 
