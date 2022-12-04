@@ -64,6 +64,8 @@ defmodule Ash.React.App do
     {id, momo, markup}
   end
 
+  # FIXME isolate or publish a behaviour
+  # FIXME this assumes modules has init | update | children
   defp realize(state, markup, tree, extras \\ []) do
     {id, handler, opts, inner} = markup
     ids = State.push_id(state, id)
