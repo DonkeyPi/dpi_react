@@ -1,6 +1,7 @@
 defmodule Ash.React.App do
   alias Ash.React.State
   alias Ash.React.Driver
+  alias Ash.Node.Builder
 
   # Port drivers must start on app
   # process to receive exit notices.
@@ -59,7 +60,7 @@ defmodule Ash.React.App do
           Driver.tree(driver)
       end
 
-    markup = func.(state, opts)
+    markup = Builder.build(fn -> func.(state, opts) end)
     {id, momo} = realize(state, markup, tree, root: true)
     {id, momo, markup}
   end

@@ -8,6 +8,7 @@ defmodule Ash.React do
           use Ash.Node
           import Ash.React
           import Ash.React.App, only: [run: 2]
+          import Ash.React.Helpers
 
           def child_spec(opts) do
             %{
@@ -88,6 +89,7 @@ defmodule Ash.React do
         quote do
           use Ash.Node
           import Ash.React
+          import Ash.React.Helpers
         end
     end
   end
