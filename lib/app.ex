@@ -3,9 +3,6 @@ defmodule Ash.React.App do
   alias Ash.React.Driver
   alias Ash.Node.Builder
 
-  # Port drivers must start on app
-  # process to receive exit notices.
-  # Driver passed as {module, pid}.
   def run(func, opts) do
     State.start()
     {driver, opts} = Keyword.pop!(opts, :driver)
@@ -18,54 +15,43 @@ defmodule Ash.React.App do
   # Reliable code should not depend
   # on proper on exit effects cleanup.
   # Port drivers may die at any time.
-  def loop(driver, onevt, func, opts) do
-    msg =
-      receive do
-        {:react_cb, callback} ->
-          callback.()
-          :react_cb
-
-        msg ->
-          msg
-      end
-
-    if onevt != nil, do: onevt.(msg)
-
-    cond do
-      msg == :react_cb ->
-        loop(driver, onevt, func, opts)
-
-      Driver.handles?(driver, msg) ->
-        # React state updated in place.
-        :ok = Driver.handle(driver, msg)
-        # FIXME key to id
-        # FIXME  modals
-        # FIXME  cleanup
+  defp loop(driver, onevt, func, opts) do
+    receive do
+      {:react_cb, callback} ->
+        callback.()
         update(driver, func, opts)
         loop(driver, onevt, func, opts)
 
-      msg == :stop ->
+      :react_stop ->
         # FIXME Attempt a clean stop.
         # Stop reason to kill state.
         Process.exit(self(), :stop)
 
-      true ->
-        raise "Unexpected #{inspect(msg)}"
+      msg ->
+        if onevt != nil, do: onevt.(msg)
+
+        case Driver.handles?(driver, msg) do
+          true ->
+            :ok = Driver.handle(driver, msg)
+            update(driver, func, opts)
+            loop(driver, onevt, func, opts)
+
+          _ ->
+            raise "Unexpected #{inspect(msg)}"
+        end
     end
   end
 
-  # Updates the model for the current state.
   defp update(driver, func, opts) do
     %{models: models} = State.reset_state()
     markup = Builder.build(fn -> func.(opts) end)
-    {id, model} = realize(driver, markup, models, root: true)
+    {id, model} = realize(driver, markup, models)
     Driver.render(driver, id, model)
   end
 
-  defp realize(driver, markup, models, extras \\ []) do
+  defp realize(driver, markup, models) do
     {id, handler, props, children} = markup
     ids = State.push_id(id)
-    {handler, props, children} = eval(handler, props, children)
 
     children =
       for child <- children do
@@ -73,33 +59,8 @@ defmodule Ash.React.App do
       end
 
     ^id = State.pop_id()
-    # root is dropped on panel update
-    node = {handler, props ++ extras, children}
+    node = {handler, props, children}
     model = Driver.update(driver, ids, node)
     {id, model}
-  end
-
-  defp eval(handler, props, children) do
-    cond do
-      # functions are expanded
-      is_function(handler, 1) ->
-        props = Enum.into(props, %{})
-        res = call(handler, props)
-        {_, handler, props, children} = res
-        eval(handler, props, children)
-
-      # pass as-is to driver
-      true ->
-        {handler, props, children}
-    end
-  end
-
-  # FIXME are nulls being generated / eliminated?
-  # FIXME this needs a builder push/pop
-  defp call(handler, props) do
-    case handler.(props) do
-      nil -> {nil, Nil, [], []}
-      res -> res
-    end
   end
 end

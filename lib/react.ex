@@ -21,7 +21,7 @@ defmodule Ash.React do
           def start_link(opts \\ []) do
             alias Ash.React.App
             alias Ash.React.Driver
-            # Extract app options.
+            # Extract mandatory driver from app options.
             {driver, opts} = Keyword.pop!(opts, :driver)
             # Supervisor restart strategy.
             {delay, opts} = Keyword.pop(opts, :delay, 0)
@@ -42,6 +42,10 @@ defmodule Ash.React do
                 Driver.opts(driver)
                 |> Keyword.put(:driver, driver)
                 |> init()
+
+                # Init is the user defined function that must in
+                # turn call Ash.React.App.run after adjusting opts.
+                # @see samples at app/exs/*.exs
               end)
 
             {:ok, pid}
@@ -53,7 +57,7 @@ defmodule Ash.React do
             ref = Process.monitor(pid)
 
             # Attempt a clean stop.
-            send(pid, :stop)
+            send(pid, :react_stop)
 
             # Reliable code should not depend
             # on proper on exit effects cleanup.
