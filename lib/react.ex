@@ -3,7 +3,6 @@ defmodule Ash.React do
     case Keyword.get(opts, :app, false) do
       true ->
         quote do
-          use Ash.Node
           import Ash.React.Api
           import Ash.React.App, only: [run: 2]
           import Ash.React.Helpers
@@ -89,7 +88,6 @@ defmodule Ash.React do
 
       _ ->
         quote do
-          use Ash.Node
           import Ash.React.Api
           import Ash.React.Helpers
         end

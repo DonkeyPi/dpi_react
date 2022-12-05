@@ -14,18 +14,16 @@ defmodule Demo do
     {origin, set_origin} = use_state(:origin, {0, 0})
     {size, set_size} = use_state(:size, {String.length("text"), 1})
 
-    node :main, Panel, size: {cols, rows} do
-      node(
+    panel :main, size: {cols, rows} do
+      label(
         :label,
-        Label,
         origin: origin,
         size: size,
         text: "#{text}"
       )
 
-      node(
+      button(
         :mode_left,
-        Button,
         origin: {0, 10},
         text: "< Move Left",
         on_click: fn ->
@@ -34,9 +32,8 @@ defmodule Demo do
         end
       )
 
-      node(
+      button(
         :mode_right,
-        Button,
         origin: {0, 11},
         text: "> Move Right",
         on_click: fn ->
@@ -45,9 +42,8 @@ defmodule Demo do
         end
       )
 
-      node(
+      button(
         :dec_size,
-        Button,
         origin: {0, 12},
         text: "- Dec Size",
         on_click: fn ->
@@ -56,9 +52,8 @@ defmodule Demo do
         end
       )
 
-      node(
+      button(
         :inc_size,
-        Button,
         origin: {0, 13},
         text: "+ Inc Size",
         on_click: fn ->
