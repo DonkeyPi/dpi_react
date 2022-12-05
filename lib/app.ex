@@ -7,19 +7,19 @@ defmodule Ash.React.App do
   # process to receive exit notices.
   # Driver passed as {module, pid}.
   def run(func, opts) do
+    State.start()
     {driver, opts} = Keyword.pop!(opts, :driver)
     {onevt, opts} = Keyword.pop(opts, :on_event, nil)
     opts = Enum.into(opts, %{})
-    state = State.init()
-    dom = update(nil, state, nil, func, opts)
+    dom = update(nil, nil, func, opts)
     driver = Driver.render(driver, dom)
-    loop(driver, onevt, state, dom, func, opts)
+    loop(driver, onevt, dom, func, opts)
   end
 
   # Reliable code should not depend
   # on proper on exit effects cleanup.
   # Port drivers may die at any time.
-  def loop(driver, onevt, state, dom, func, opts) do
+  def loop(driver, onevt, dom, func, opts) do
     msg =
       receive do
         msg -> msg
@@ -34,9 +34,9 @@ defmodule Ash.React.App do
         # FIXME key to id
         # FIXME  modals
         # FIXME  cleanup
-        dom = update(driver, state, dom, func, opts)
+        dom = update(driver, dom, func, opts)
         driver = Driver.render(driver, dom)
-        loop(driver, onevt, state, dom, func, opts)
+        loop(driver, onevt, dom, func, opts)
 
       msg == :stop ->
         # FIXME Attempt a clean stop.
@@ -49,30 +49,30 @@ defmodule Ash.React.App do
   end
 
   # Updates the model for the current state.
-  defp update(driver, state, dom, func, opts) do
+  defp update(driver, dom, func, opts) do
     tree =
       case dom do
         nil ->
           %{}
 
         {_, _, _} ->
-          State.reset_state(state)
+          State.reset_state()
           Driver.tree(driver)
       end
 
-    markup = Builder.build(fn -> func.(state, opts) end)
-    {id, momo} = realize(state, markup, tree, root: true)
+    markup = Builder.build(fn -> func.(opts) end)
+    {id, momo} = realize(markup, tree, root: true)
     {id, momo, markup}
   end
 
   # FIXME isolate or publish a behaviour
   # FIXME this assumes modules has init | update | children
-  defp realize(state, markup, tree, extras \\ []) do
+  defp realize(markup, tree, extras \\ []) do
     {id, handler, opts, inner} = markup
-    ids = State.push_id(state, id)
-    {module, opts, inner} = eval(state, {handler, opts, inner})
-    inner = for item <- inner, do: realize(state, item, tree)
-    State.pop_id(state)
+    ids = State.push_id(id)
+    {module, opts, inner} = eval({handler, opts, inner})
+    inner = for item <- inner, do: realize(item, tree)
+    ^id = State.pop_id()
 
     model =
       case Map.get(tree, ids) do
@@ -87,21 +87,21 @@ defmodule Ash.React.App do
     {id, {module, model}}
   end
 
-  defp eval(state, {handler, opts, inner}) do
+  defp eval({handler, opts, inner}) do
     cond do
       is_function(handler) ->
         opts = Enum.into(opts, %{})
-        res = eval(state, handler, opts)
+        res = eval(handler, opts)
         {_, handler, opts, inner} = res
-        eval(state, {handler, opts, inner})
+        eval({handler, opts, inner})
 
       is_atom(handler) ->
         {handler, opts, inner}
     end
   end
 
-  defp eval(state, handler, opts) do
-    case handler.(state, opts) do
+  defp eval(handler, opts) do
+    case handler.(opts) do
       nil -> {nil, Nil, [], []}
       res -> res
     end

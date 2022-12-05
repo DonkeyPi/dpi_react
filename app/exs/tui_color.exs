@@ -6,11 +6,11 @@ defmodule Demo do
 
   def init(opts) do
     on_event = fn e -> log("Event #{inspect(e)}") end
-    run(&main/2, Keyword.put(opts, :on_event, on_event))
+    run(&main/1, Keyword.put(opts, :on_event, on_event))
   end
 
-  def main(react, %{cols: cols, rows: rows}) do
-    {rgb, set_rgb} = use_state(react, :rgb, {0xFF, 0xFF, 0xFF})
+  def main(%{cols: cols, rows: rows}) do
+    {rgb, set_rgb} = use_state(:rgb, {0xFF, 0xFF, 0xFF})
 
     {r, g, b} = rgb
 

@@ -6,11 +6,11 @@ defmodule Demo do
 
   def init(opts) do
     on_event = fn e -> log("Event #{inspect(e)}") end
-    run(&main/2, Keyword.put(opts, :on_event, on_event))
+    run(&main/1, Keyword.put(opts, :on_event, on_event))
   end
 
-  def main(react, %{cols: cols, rows: rows}) do
-    {count, set_count} = use_state(react, :count, 0)
+  def main(%{cols: cols, rows: rows}) do
+    {count, set_count} = use_state(:count, 0)
     on_delta = fn delta -> set_count.(count + delta) end
 
     node :main, Panel, size: {cols, rows} do

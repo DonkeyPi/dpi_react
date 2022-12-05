@@ -6,13 +6,13 @@ defmodule Demo do
 
   def init(opts) do
     on_event = fn e -> log("Event #{inspect(e)}") end
-    run(&main/2, Keyword.put(opts, :on_event, on_event))
+    run(&main/1, Keyword.put(opts, :on_event, on_event))
   end
 
-  def main(react, %{cols: cols, rows: rows}) do
-    {text, _set_text} = use_state(react, :text, "text")
-    {origin, set_origin} = use_state(react, :origin, {0, 0})
-    {size, set_size} = use_state(react, :size, {String.length("text"), 1})
+  def main(%{cols: cols, rows: rows}) do
+    {text, _set_text} = use_state(:text, "text")
+    {origin, set_origin} = use_state(:origin, {0, 0})
+    {size, set_size} = use_state(:size, {String.length("text"), 1})
 
     node :main, Panel, size: {cols, rows} do
       node(
