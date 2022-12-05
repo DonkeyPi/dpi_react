@@ -2,7 +2,7 @@ defmodule Ash.React.Api do
   alias Ash.React.State
 
   def use_state(id, initial) do
-    pid = assert_pid()
+    pid = State.assert_pid()
     ids = State.append_id(id)
     value = State.use_state(ids, initial)
 
@@ -134,16 +134,6 @@ defmodule Ash.React.Api do
       now = DateTime.utc_now()
       now = String.slice("#{now}", 11..22)
       IO.puts("#{now} #{inspect(self())} #{module} #{msg}")
-    end
-  end
-
-  defp assert_pid() do
-    # API restricted to react process.
-    pid = self()
-
-    case State.pid() do
-      ^pid -> pid
-      pid -> raise "Invalid caller: #{inspect(pid)}"
     end
   end
 end

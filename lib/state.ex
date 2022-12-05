@@ -1,8 +1,7 @@
 defmodule Ash.React.State do
   def start() do
     # assert_raise may leave partial state behind
-    pid = self()
-    put({pid, map(), map()})
+    put({self(), map(), map()})
   end
 
   def map(),
@@ -12,10 +11,21 @@ defmodule Ash.React.State do
       changes: %{}
     }
 
-  def pid(), do: get() |> elem(0)
   def stop(), do: put(nil)
+  def pid(), do: get() |> elem(0)
   def get(), do: Process.get(__MODULE__)
   def put(map), do: Process.put(__MODULE__, map)
+
+  def assert_pid() do
+    with tuple <- get(),
+         true <- tuple != nil,
+         pid <- elem(tuple, 0),
+         true <- pid == self() do
+      pid
+    else
+      _ -> raise "Invalid caller: #{inspect(self())}"
+    end
+  end
 
   def push_id(id) do
     {pid, curr, prev} = get()

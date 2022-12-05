@@ -22,12 +22,20 @@ defmodule Ash.React.App do
   def loop(driver, onevt, dom, func, opts) do
     msg =
       receive do
-        msg -> msg
+        {:react_cb, callback} ->
+          callback.()
+          :react_cb
+
+        msg ->
+          msg
       end
 
     if onevt != nil, do: onevt.(msg)
 
     cond do
+      msg == :react_cb ->
+        loop(driver, onevt, dom, func, opts)
+
       Driver.handles?(driver, msg) ->
         # React state updated in place.
         :ok = Driver.handle(driver, msg)
