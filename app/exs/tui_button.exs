@@ -14,19 +14,29 @@ defmodule Demo do
     on_delta = fn delta -> set_count.(count + delta) end
 
     node :main, Panel, size: {cols, rows} do
-      node(:label, Label, origin: {0, 0}, size: {12, 1}, text: "#{count}")
+      node(
+        :label,
+        Label,
+        origin: {0, 0},
+        size: {15, 1},
+        text: "#{count}"
+      )
 
-      node(:increment, Button,
+      node(
+        :increment,
+        Button,
         origin: {0, 1},
-        size: {12, 1},
+        size: {15, 3},
         enabled: rem(count, 3) != 2,
         text: "Increment",
         on_click: fn -> on_delta.(+1) end
       )
 
-      node(:decrement, Button,
-        origin: {0, 2},
-        size: {12, 1},
+      node(
+        :decrement,
+        Button,
+        origin: {0, 4},
+        size: {15, 3},
         text: "Decrement",
         enabled: rem(count, 3) != 0,
         on_click: fn -> on_delta.(-1) end

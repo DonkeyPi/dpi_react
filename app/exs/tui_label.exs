@@ -9,18 +9,63 @@ defmodule Demo do
     run(&main/2, Keyword.put(opts, :on_event, on_event))
   end
 
-  def main(_react, %{cols: cols, rows: rows}) do
-    node :main, Panel, size: {cols, rows} do
-      for c <- 0..9 do
-        for r <- 0..29 do
-          b = r + 30 * c
-          h = Integer.to_string(b) |> String.pad_leading(3, "0")
+  def main(react, %{cols: cols, rows: rows}) do
+    {text, _set_text} = use_state(react, :text, "text")
+    {origin, set_origin} = use_state(react, :origin, {0, 0})
+    {size, set_size} = use_state(react, :size, {String.length("text"), 1})
 
-          if b < 256 do
-            node({:label, b}, Label, origin: {10 * c, r}, back: b, text: "Color #{h}")
-          end
+    node :main, Panel, size: {cols, rows} do
+      node(
+        :label,
+        Label,
+        origin: origin,
+        size: size,
+        text: "#{text}"
+      )
+
+      node(
+        :mode_left,
+        Button,
+        origin: {0, 10},
+        text: "< Move Left",
+        on_click: fn ->
+          {c, r} = origin
+          set_origin.({c - 1, r})
         end
-      end
+      )
+
+      node(
+        :mode_right,
+        Button,
+        origin: {0, 11},
+        text: "> Move Right",
+        on_click: fn ->
+          {c, r} = origin
+          set_origin.({c + 1, r})
+        end
+      )
+
+      node(
+        :dec_size,
+        Button,
+        origin: {0, 12},
+        text: "- Dec Size",
+        on_click: fn ->
+          {c, r} = size
+          set_size.({c - 1, r})
+        end
+      )
+
+      node(
+        :inc_size,
+        Button,
+        origin: {0, 13},
+        text: "+ Inc Size",
+        on_click: fn ->
+          {c, r} = size
+          set_size.({c + 1, r})
+        end
+      )
     end
   end
 end
