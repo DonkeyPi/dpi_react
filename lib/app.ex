@@ -11,15 +11,14 @@ defmodule Ash.React.App do
     {driver, opts} = Keyword.pop!(opts, :driver)
     {onevt, opts} = Keyword.pop(opts, :on_event, nil)
     opts = Enum.into(opts, %{})
-    dom = update(nil, nil, func, opts)
-    driver = Driver.render(driver, dom)
-    loop(driver, onevt, dom, func, opts)
+    update(driver, func, opts)
+    loop(driver, onevt, func, opts)
   end
 
   # Reliable code should not depend
   # on proper on exit effects cleanup.
   # Port drivers may die at any time.
-  def loop(driver, onevt, dom, func, opts) do
+  def loop(driver, onevt, func, opts) do
     msg =
       receive do
         {:react_cb, callback} ->
@@ -34,7 +33,7 @@ defmodule Ash.React.App do
 
     cond do
       msg == :react_cb ->
-        loop(driver, onevt, dom, func, opts)
+        loop(driver, onevt, func, opts)
 
       Driver.handles?(driver, msg) ->
         # React state updated in place.
@@ -42,9 +41,8 @@ defmodule Ash.React.App do
         # FIXME key to id
         # FIXME  modals
         # FIXME  cleanup
-        dom = update(driver, dom, func, opts)
-        driver = Driver.render(driver, dom)
-        loop(driver, onevt, dom, func, opts)
+        update(driver, func, opts)
+        loop(driver, onevt, func, opts)
 
       msg == :stop ->
         # FIXME Attempt a clean stop.
@@ -57,59 +55,39 @@ defmodule Ash.React.App do
   end
 
   # Updates the model for the current state.
-  defp update(driver, dom, func, opts) do
-    tree =
-      case dom do
-        nil ->
-          %{}
-
-        {_, _, _} ->
-          State.reset_state()
-          Driver.tree(driver)
-      end
-
+  defp update(driver, func, opts) do
+    %{models: models} = State.reset_state()
     markup = Builder.build(fn -> func.(opts) end)
-    {id, momo} = realize(markup, tree, root: true)
-    {id, momo, markup}
+    {id, model} = realize(driver, markup, models, root: true)
+    Driver.render(driver, id, model)
   end
 
-  # FIXME isolate or publish a behaviour
-  # FIXME this assumes modules has init | update | children
-  defp realize(markup, tree, extras \\ []) do
-    {id, handler, opts, inner} = markup
+  defp realize(driver, markup, models, extras \\ []) do
+    {id, handler, props, children} = markup
     ids = State.push_id(id)
-    {module, opts, inner} = eval({handler, opts, inner})
-    inner = for item <- inner, do: realize(item, tree)
+    {handler, props, children} = eval(handler, props, children)
+    children = for child <- children, do: realize(driver, child, models)
     ^id = State.pop_id()
-
-    model =
-      case Map.get(tree, ids) do
-        {^module, model} ->
-          module.update(model, opts)
-
-        _ ->
-          module.init(opts ++ extras)
-      end
-
-    model = module.children(model, inner)
-    {id, {module, model}}
+    model = Driver.update(driver, handler, ids, children, props, extras)
+    {id, model}
   end
 
-  defp eval({handler, opts, inner}) do
+  defp eval(handler, props, children) do
     cond do
-      is_function(handler) ->
-        opts = Enum.into(opts, %{})
-        res = eval(handler, opts)
-        {_, handler, opts, inner} = res
-        eval({handler, opts, inner})
+      is_function(handler, 1) ->
+        props = Enum.into(props, %{})
+        res = call(handler, props)
+        {_, handler, props, children} = res
+        eval(handler, props, children)
 
-      is_atom(handler) ->
-        {handler, opts, inner}
+      # pass as-is to driver
+      true ->
+        {handler, props, children}
     end
   end
 
-  defp eval(handler, opts) do
-    case handler.(opts) do
+  defp call(handler, props) do
+    case handler.(props) do
       nil -> {nil, Nil, [], []}
       res -> res
     end

@@ -9,14 +9,13 @@ defmodule Ash.React.Driver do
   #   width::integer()
   #   height::integer()
   #   title::binary()
-  @callback start(opts :: keyword()) :: state :: any()
+  @callback start(opts :: keyword()) :: :ok
 
   # Extract the initialized option from opaque state.
-  @callback opts(state :: any()) :: opts :: keyword()
-  @callback tree(state :: any()) :: tree :: map()
+  @callback opts() :: opts :: keyword()
 
   # Extract the initialized option from opaque state.
-  @callback handles?(state :: any(), msg :: any()) :: true | false
+  @callback handles?(msg :: any()) :: true | false
 
   # Dom versioning required to deal with
   # the asych nature of the events round trip
@@ -33,17 +32,29 @@ defmodule Ash.React.Driver do
   # Mandatory args:
   #   dom::keyword()
   #   event::any()
-  @callback handle(state :: any(), event :: any()) :: :ok
+  @callback handle(event :: any()) :: :ok
 
   # Push the updated dom to the screen.
   # Mandatory args:
   #   dom::keyword()
-  @callback render(state :: any(), dom :: keyword()) :: :ok
+  @callback render(id :: any(), model :: any()) :: :ok
 
-  def start(module, opts), do: {module, module.start(opts)}
-  def opts({module, state}), do: module.opts(state)
-  def tree({module, state}), do: module.tree(state)
-  def handles?({module, state}, msg), do: module.handles?(state, msg)
-  def handle({module, state}, event), do: module.handle(state, event)
-  def render({module, state}, dom), do: {module, module.render(state, dom)}
+  # Opaque model handling
+  @callback update(
+              handler :: any(),
+              ids :: list(),
+              children :: list(),
+              props :: list(),
+              extras :: list()
+            ) ::
+              model :: any()
+
+  def start(module, opts), do: module.start(opts)
+  def opts(module), do: module.opts()
+  def handles?(module, msg), do: module.handles?(msg)
+  def handle(module, event), do: module.handle(event)
+  def render(module, id, model), do: module.render(id, model)
+
+  def update(module, handler, ids, children, props, extras),
+    do: module.update(handler, ids, children, props, extras)
 end

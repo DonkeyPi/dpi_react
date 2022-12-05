@@ -30,7 +30,7 @@ defmodule Ash.React do
             pid =
               spawn_link(fn ->
                 # Pass on driver options.
-                driver = Driver.start(driver, opts)
+                :ok = Driver.start(driver, opts)
                 # Init is the user defined function that calls run.
                 # Returned options are driver specific.
                 # TUI drivers have the following mandatory options:

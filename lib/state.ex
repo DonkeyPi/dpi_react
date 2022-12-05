@@ -8,13 +8,13 @@ defmodule Ash.React.State do
     do: %{
       ids: [],
       state: %{},
-      changes: %{}
+      changes: %{},
+      models: %{}
     }
 
   def stop(), do: put(nil)
-  def pid(), do: get() |> elem(0)
-  def get(), do: Process.get(__MODULE__)
-  def put(map), do: Process.put(__MODULE__, map)
+  defp get(), do: Process.get(__MODULE__)
+  defp put(state), do: Process.put(__MODULE__, state)
 
   def assert_pid() do
     with tuple <- get(),
