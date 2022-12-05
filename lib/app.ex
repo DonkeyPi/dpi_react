@@ -66,14 +66,22 @@ defmodule Ash.React.App do
     {id, handler, props, children} = markup
     ids = State.push_id(id)
     {handler, props, children} = eval(handler, props, children)
-    children = for child <- children, do: realize(driver, child, models)
+
+    children =
+      for child <- children do
+        realize(driver, child, models)
+      end
+
     ^id = State.pop_id()
-    model = Driver.update(driver, handler, ids, children, props, extras)
+    # root is dropped on panel update
+    node = {handler, props ++ extras, children}
+    model = Driver.update(driver, ids, node)
     {id, model}
   end
 
   defp eval(handler, props, children) do
     cond do
+      # functions are expanded
       is_function(handler, 1) ->
         props = Enum.into(props, %{})
         res = call(handler, props)
@@ -86,6 +94,8 @@ defmodule Ash.React.App do
     end
   end
 
+  # FIXME are nulls being generated / eliminated?
+  # FIXME this needs a builder push/pop
   defp call(handler, props) do
     case handler.(props) do
       nil -> {nil, Nil, [], []}

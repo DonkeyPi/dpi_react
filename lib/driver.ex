@@ -40,21 +40,12 @@ defmodule Ash.React.Driver do
   @callback render(id :: any(), model :: any()) :: :ok
 
   # Opaque model handling
-  @callback update(
-              handler :: any(),
-              ids :: list(),
-              children :: list(),
-              props :: list(),
-              extras :: list()
-            ) ::
-              model :: any()
+  @callback update(ids :: list(), node :: tuple()) :: model :: any()
 
   def start(module, opts), do: module.start(opts)
   def opts(module), do: module.opts()
   def handles?(module, msg), do: module.handles?(msg)
   def handle(module, event), do: module.handle(event)
   def render(module, id, model), do: module.render(id, model)
-
-  def update(module, handler, ids, children, props, extras),
-    do: module.update(handler, ids, children, props, extras)
+  def update(module, ids, node), do: module.update(ids, node)
 end
