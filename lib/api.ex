@@ -32,24 +32,28 @@ defmodule Ash.React.Api do
     fn -> send(pid, {:react_cb, callback}) end
   end
 
-  # def use_effect(id, function) do
-  #   use_effect(id, nil, function)
-  # end
+  # Effect are all about guaranteed cleanups.
+  # Resources that require explicit cleanup
+  # to avoid accumulating overtime must be
+  # started and stopped from within an effect.
+  def use_effect(id, function) do
+    use_effect(id, nil, function)
+  end
 
-  # def use_effect(id, deps, callback) do
-  #   assert_pid()
-  #   ids = State.append_id(id)
+  def use_effect(id, deps, callback) do
+    pid = State.assert_pid()
+    ids = State.append_id(id)
 
-  #   function = fn ->
-  #     cleanup = callback.()
+    function = fn ->
+      cleanup = callback.()
 
-  #     if is_function(cleanup) do
-  #       State.set_cleanup(ids, cleanup)
-  #     end
-  #   end
+      if is_function(cleanup) do
+        State.set_cleanup(ids, cleanup)
+      end
+    end
 
-  #   State.use_effect(ids, function, deps)
-  # end
+    State.use_effect(ids, function, deps)
+  end
 
   # def set_interval(millis, callback) do
   #   pid = assert_pid()

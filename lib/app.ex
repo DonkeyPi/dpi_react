@@ -43,7 +43,7 @@ defmodule Ash.React.App do
   end
 
   defp update(driver, func, opts) do
-    State.reset()
+    State.push()
     markup = Builder.build(fn -> func.(opts) end)
     {id, model} = realize(driver, markup)
     Driver.render(driver, id, model)
