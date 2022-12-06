@@ -202,6 +202,7 @@ defmodule Ash.React.State do
     # Executing a triggered effect requires to cleanup a
     # previous version of the same effect if it exists.
     # For newly defined effects a cleanup may not exist yet.
-    {triggered, cleanups}
+    Enum.each(cleanups, fn {_key, cleanup} -> cleanup.() end)
+    Enum.each(effects, fn {_key, {function, _deps}} -> function.() end)
   end
 end

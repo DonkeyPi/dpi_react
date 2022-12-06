@@ -8,15 +8,10 @@ defmodule Ash.React.Api do
 
     {value,
      fn value ->
-       case self() do
-         ^pid ->
-           State.set_state(ids, value)
-
-         _ ->
-           # support set_state from other processes
-           callback = fn -> State.set_state(ids, value) end
-           send(pid, {:react_cb, callback})
-       end
+       # Async for single point of state change and
+       # to support set_state from other processes.
+       callback = fn -> State.set_state(ids, value) end
+       send(pid, {:react_ss, callback})
      end}
   end
 
@@ -28,6 +23,7 @@ defmodule Ash.React.Api do
     pid = State.assert_pid()
     ids = State.append_id(id)
     State.use_callback(ids, function)
+    # Returns nop function if not found.
     callback = fn -> State.get_callback(ids).() end
     fn -> send(pid, {:react_cb, callback}) end
   end
@@ -41,7 +37,7 @@ defmodule Ash.React.Api do
   end
 
   def use_effect(id, deps, callback) do
-    pid = State.assert_pid()
+    _pid = State.assert_pid()
     ids = State.append_id(id)
 
     function = fn ->

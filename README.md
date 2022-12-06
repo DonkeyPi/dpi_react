@@ -30,19 +30,28 @@ Demo.run_and_wait(Driver, opts)
 - Wait event
 - On UI event
   - Handle event (driver)
-  - Can change UI model
-  - Can change react state
+  - Can change UI model *
+  - Can trigger react state change (async) *
 - On react callback event
-  - Directly execute callback
-  - Can change react state
-- Push react state (current to previous)
-  - Previous data still accesible as default
+  - Execute callback directly
+  - Can change react state (unique place) *
 - Build markup (from updated state)
   - The react API is called in this phase
   - The react API consist of use_XXXX imports
-- Calculate effect and cleanup (from state diff)
+  - This is the only place where state is read
+- Calculate effects and cleanups (from state diff)
   - Execute cleanups
-  - Execute effects
+    - Cleanups of removed effects
+    - Cleanups of about to fire effects
+  - Execute triggered effects
+  - Can trigger react state change (async) *
+- Push react state (current to previous)
+  - Previous data still accesible as default
 - Update model (from new markup)
+  - Driver must no change react state
+  - Driver must no trigger UI events
+  - New nodes are initialized
+  - Existing node are updated
+  - Can change UI model *
 - Render model (driver)
 - Go to wait event

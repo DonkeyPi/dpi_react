@@ -17,7 +17,13 @@ defmodule Ash.React.App do
   # Port drivers may die at any time.
   defp loop(driver, onevt, func, opts) do
     receive do
+      # Callbacks do not change state.
       {:react_cb, callback} ->
+        callback.()
+        loop(driver, onevt, func, opts)
+
+      # Set-states do change state.
+      {:react_ss, callback} ->
         callback.()
         update(driver, func, opts)
         loop(driver, onevt, func, opts)
@@ -43,10 +49,12 @@ defmodule Ash.React.App do
   end
 
   defp update(driver, func, opts) do
-    State.push()
-    markup = Builder.build(fn -> func.(opts) end)
+    build = fn -> func.(opts) end
+    markup = Builder.build(build, &visitor/2)
     {id, model} = realize(driver, markup)
-    Driver.render(driver, id, model)
+    :ok = Driver.render(driver, id, model)
+    State.apply_effects()
+    State.push()
   end
 
   defp realize(driver, markup) do
@@ -63,4 +71,8 @@ defmodule Ash.React.App do
     model = Driver.update(driver, ids, node)
     {id, model}
   end
+
+  defp visitor(:push, id), do: State.push_id(id)
+  defp visitor(:pop, _id), do: State.pop_id()
+  defp visitor(:add, _id), do: :nop
 end

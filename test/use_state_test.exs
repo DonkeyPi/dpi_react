@@ -17,17 +17,26 @@ defmodule Ash.React.UseState.Test do
     # Last call before reset wins.
     set_id.(:final)
 
-    # Can be called again after reset.
+    # Execute 2 state updates.
+    receive do
+      {:react_ss, callback} -> callback.()
+    end
+
+    receive do
+      {:react_ss, callback} -> callback.()
+    end
+
+    # Can call use_state again after stat push.
     State.push()
-    {id, set_id} = Api.use_state(:id, :initial)
+    {id, _set_id} = Api.use_state(:id, :initial)
     assert id == :final
 
     # Setters can be called from any process.
     spawn_link(fn -> set_id.(:remote) end)
 
-    # Setters are synchronized to the main process.
+    # Execute 1 state update.
     receive do
-      {:react_cb, callback} -> callback.()
+      {:react_ss, callback} -> callback.()
     end
 
     State.push()
