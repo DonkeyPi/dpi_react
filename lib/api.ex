@@ -20,12 +20,17 @@ defmodule Ash.React.Api do
      end}
   end
 
-  # def use_callback(id, function) do
-  #   assert_pid()
-  #   ids = State.append_id(id)
-  #   State.use_callback(ids, function)
-  #   fn -> State.get_callback(ids).() end
-  # end
+  # Callbacks are required for timers
+  # to get the value of state at the
+  # time of execution instead of at
+  # the time of function definition.
+  def use_callback(id, function) do
+    pid = State.assert_pid()
+    ids = State.append_id(id)
+    State.use_callback(ids, function)
+    callback = fn -> State.get_callback(ids).() end
+    fn -> send(pid, {:react_cb, callback}) end
+  end
 
   # def use_effect(id, function) do
   #   use_effect(id, nil, function)

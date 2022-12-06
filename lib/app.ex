@@ -43,19 +43,19 @@ defmodule Ash.React.App do
   end
 
   defp update(driver, func, opts) do
-    %{models: models} = State.reset_state()
+    State.reset()
     markup = Builder.build(fn -> func.(opts) end)
-    {id, model} = realize(driver, markup, models)
+    {id, model} = realize(driver, markup)
     Driver.render(driver, id, model)
   end
 
-  defp realize(driver, markup, models) do
+  defp realize(driver, markup) do
     {id, handler, props, children} = markup
     ids = State.push_id(id)
 
     children =
       for child <- children do
-        realize(driver, child, models)
+        realize(driver, child)
       end
 
     ^id = State.pop_id()
