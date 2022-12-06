@@ -4,25 +4,24 @@ defmodule Ash.React.State do
     put({self(), map(), map()})
   end
 
-  def push() do
-    {pid, curr, prev} = get()
-    keep = [:ceffect]
-    keep = Map.take(curr, keep)
-    new = Map.merge(map(), keep)
-    put({pid, new, curr})
-    prev
+  def forward() do
+    {pid, curr, _prev} = get()
+    put({pid, map(), curr})
   end
 
-  def map(),
-    do: %{
+  def map() do
+    %{
       ids: [],
-      state: %{},
+      fstate: %{},
+      vstate: %{},
       changes: %{},
       callbacks: %{},
+      sync?: true,
       effects: %{},
       ieffects: [],
       ceffects: %{}
     }
+  end
 
   def stop(), do: put(nil)
   defp get(), do: Process.get(__MODULE__)
@@ -37,6 +36,17 @@ defmodule Ash.React.State do
     else
       _ -> raise "Invalid caller: #{inspect(self())}"
     end
+  end
+
+  def sync?() do
+    {_pid, curr, _prev} = get()
+    curr.sync?
+  end
+
+  def sync?(value) do
+    {pid, curr, prev} = get()
+    curr = %{curr | sync?: value}
+    put({pid, curr, prev})
   end
 
   ###########################################################
@@ -62,29 +72,57 @@ defmodule Ash.React.State do
     [id | curr.ids]
   end
 
+  def assert_root() do
+    {_pid, curr, _prev} = get()
+
+    unless curr.ids == [] do
+      raise("State path is not root: #{inspect(curr.ids)}")
+    end
+  end
+
   ###########################################################
   # State handling
   ###########################################################
 
   def use_state(id, value) do
     {pid, curr, prev} = get()
-    state = curr.state
-    if Map.has_key?(state, id), do: raise("Duplicated state id: #{inspect(id)}")
-    value = Map.get(prev.state, id, value)
-    state = Map.put(state, id, value)
-    put({pid, %{curr | state: state}, prev})
+    fstate = curr.fstate
+    vstate = curr.vstate
+
+    if Map.has_key?(fstate, id) do
+      raise("Duplicated state id: #{inspect(id)}")
+    end
+
+    fstate = Map.put(fstate, id, true)
+    curr = %{curr | fstate: fstate}
+
+    value = Map.get(prev.vstate, id, value)
+    value = Map.get(vstate, id, value)
+    # This next put ensures it is carried on
+    # next forward even if no set is issued
+    # on the current cycle.
+    vstate = Map.put(vstate, id, value)
+    curr = %{curr | vstate: vstate}
+
+    put({pid, curr, prev})
     value
   end
 
   def set_state(id, value) do
     {pid, curr, prev} = get()
-    state = curr.state
+
+    vstate = curr.vstate
+
     changes = curr.changes
     count = Map.get(changes, id, 0)
-    inc = if value == state[id], do: 0, else: 1
-    changes = Map.put(changes, id, count + inc)
-    state = Map.put(state, id, value)
-    curr = %{curr | state: state, changes: changes}
+    equal = value == vstate[id]
+    count = if equal, do: count, else: count + 1
+    changes = Map.put(changes, id, count)
+    curr = %{curr | changes: changes}
+
+    vstate = Map.put(vstate, id, value)
+    curr = %{curr | vstate: vstate}
+
     put({pid, curr, prev})
   end
 
@@ -95,7 +133,11 @@ defmodule Ash.React.State do
   def use_callback(id, function) do
     {pid, curr, prev} = get()
     callbacks = curr.callbacks
-    if Map.has_key?(callbacks, id), do: raise("Duplicated callback id: #{inspect(id)}")
+
+    if Map.has_key?(callbacks, id) do
+      raise("Duplicated callback id: #{inspect(id)}")
+    end
+
     callbacks = Map.put(callbacks, id, function)
     curr = Map.put(curr, :callbacks, callbacks)
     put({pid, curr, prev})
@@ -115,38 +157,94 @@ defmodule Ash.React.State do
   def use_effect(id, function, deps) do
     {pid, curr, prev} = get()
     effects = curr.effects
-    if Map.has_key?(effects, id), do: raise("Duplicated effect id: #{inspect(id)}")
+
+    if Map.has_key?(effects, id) do
+      raise("Duplicated effect id: #{inspect(id)}")
+    end
+
     curr = Map.update!(curr, :ieffects, fn ieffects -> [id | ieffects] end)
+
     effects = Map.put(effects, id, {function, deps})
-    curr = Map.put(curr, :effects, effects)
+    curr = %{curr | effects: effects}
+
     put({pid, curr, prev})
   end
 
   def set_cleanup(id, function) do
     {pid, curr, prev} = get()
 
-    curr =
-      Map.update!(curr, :ceffects, fn ceffects ->
-        if Map.has_key?(ceffects, id), do: raise("Duplicated cleanup id: #{inspect(id)}")
-        Map.put(ceffects, id, function)
-      end)
+    ceffects = curr.ceffects
+
+    if Map.has_key?(ceffects, id) do
+      raise("Duplicated cleanup id: #{inspect(id)}")
+    end
+
+    ceffects = Map.put(ceffects, id, function)
+    curr = %{curr | ceffects: ceffects}
 
     put({pid, curr, prev})
   end
 
-  def apply_effects() do
+  def before_markup() do
     {pid, curr, prev} = get()
     changes = curr.changes
+    peffects = prev.effects
+    pceffects = prev.ceffects
+    pieffects = prev.ieffects
+
+    # Find previous triggered effects (by deps change).
+    # Ignore always and once effects (nil or [] deps).
+    triggered =
+      pieffects
+      |> Enum.reverse()
+      |> Enum.map(fn id -> {id, peffects[id]} end)
+      |> Enum.filter(fn {id, {_function, deps}} ->
+        [_ | parent] = id
+
+        case deps do
+          nil -> false
+          [] -> false
+          _ -> Enum.all?(deps, fn dep -> Map.get(changes, [dep | parent], 0) > 0 end)
+        end
+      end)
+
+    # Get the cleanups for all triggered effects.
+    {cleanups, ceffects} =
+      for {id, {_function, _deps}} <- triggered, reduce: {[], pceffects} do
+        {cleanups, ceffects} ->
+          {cleanup, ceffects} = Map.pop(ceffects, id)
+
+          case cleanup do
+            nil -> {cleanups, ceffects}
+            _ -> {[{id, cleanup} | cleanups], ceffects}
+          end
+      end
+
+    # Save the trimmed down cleanups to current state.
+    prev = Map.put(prev, :ceffects, %{})
+    curr = Map.put(curr, :ceffects, ceffects)
+    put({pid, curr, prev})
+
+    # Apply cleanups then apply triggered effects (in that order).
+    sync?(true)
+    Enum.each(cleanups, fn {_id, cleanup} -> cleanup.() end)
+    Enum.each(triggered, fn {_id, {function, _deps}} -> function.() end)
+    sync?(false)
+    # Cleanups for triggered effect get registered at this point.
+  end
+
+  def after_markup() do
+    {pid, curr, prev} = get()
     effects = curr.effects
     ieffects = curr.ieffects
     ceffects = curr.ceffects
-    effects_p = prev.effects
-    ieffects_p = prev.ieffects
+    peffects = prev.effects
+    pieffects = prev.ieffects
 
-    # Find removed effect ids.
-    # Present on previous iteration but not anymore.
+    # Find removed effects ids.
+    # Present in previous state but not in current state.
     removed =
-      for id <- Enum.reverse(ieffects_p), reduce: [] do
+      for id <- Enum.reverse(pieffects), reduce: [] do
         list ->
           case Map.has_key?(effects, id) do
             false -> [id | list]
@@ -154,21 +252,18 @@ defmodule Ash.React.State do
           end
       end
 
-    # Find current and triggered effects (by deps change).
+    # Find current triggered once and always effects.
     triggered =
       ieffects
       |> Enum.reverse()
       |> Enum.map(fn id -> {id, effects[id]} end)
       |> Enum.filter(fn {id, {_function, deps}} ->
-        [_ | parent] = id
+        [_ | _tail] = id
 
-        # With deps = [] effect executes only once (on first definition).
-        # With deps = [...] effect executes when at one of the deps changes
-        # With deps = nil effect executes every time.
         case deps do
           nil -> true
-          [] -> !Map.has_key?(effects_p, id)
-          _ -> Enum.all?(deps, fn dep -> Map.get(changes, [dep | parent], 0) > 0 end)
+          [] -> !Map.has_key?(peffects, id)
+          _ -> false
         end
       end)
 
@@ -183,26 +278,24 @@ defmodule Ash.React.State do
     # remove them from the current cleanup map.
     {cleanups, ceffects} =
       for id <- cleanups, reduce: {[], ceffects} do
-        {list, map} ->
-          case Map.get(map, id) do
-            nil -> {list, map}
-            cleanup -> {[{id, cleanup} | list], Map.delete(map, id)}
+        {cleanups, ceffects} ->
+          {cleanup, ceffects} = Map.pop(ceffects, id)
+
+          case cleanup do
+            nil -> {cleanups, ceffects}
+            _ -> {[{id, cleanup} | cleanups], ceffects}
           end
       end
 
     # Save the trimmed down cleanups map.
-    # Cleanups are preserved on state reset.
     curr = Map.put(curr, :ceffects, ceffects)
     put({pid, curr, prev})
 
-    # Return includes both the triggered effects to be executed
-    # and the cleanups of both the triggered and the removed.
-    # The cleanups of the triggered are included because they
-    # need to be executed before executing the effect itself.
-    # Executing a triggered effect requires to cleanup a
-    # previous version of the same effect if it exists.
-    # For newly defined effects a cleanup may not exist yet.
-    Enum.each(cleanups, fn {_key, cleanup} -> cleanup.() end)
-    Enum.each(effects, fn {_key, {function, _deps}} -> function.() end)
+    # Apply cleanups then apply triggered effects (in that order).
+    sync?(true)
+    Enum.each(cleanups, fn {_id, cleanup} -> cleanup.() end)
+    Enum.each(triggered, fn {_id, {function, _deps}} -> function.() end)
+    sync?(false)
+    # Cleanups for triggered effect get registered at this point.
   end
 end

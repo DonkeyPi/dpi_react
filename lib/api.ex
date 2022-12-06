@@ -8,17 +8,23 @@ defmodule Ash.React.Api do
 
     {value,
      fn value ->
-       # Async for single point of state change and
-       # to support set_state from other processes.
-       callback = fn -> State.set_state(ids, value) end
-       send(pid, {:react_ss, callback})
+       case pid == self() and State.sync?() do
+         true ->
+           # Setter in callbacks run immediately.
+           State.set_state(ids, value)
+
+         _ ->
+           # Async to support set_state from other processes
+           # and whenever it is run outside a callback.
+           callback = fn -> State.set_state(ids, value) end
+           send(pid, {:react_cb, callback})
+       end
      end}
   end
 
-  # Callbacks are required for timers
-  # to get the value of state at the
-  # time of execution instead of at
-  # the time of function definition.
+  # Callbacks are required for timers to get the value
+  # of state at the time of execution instead of at
+  # the time of callback function definition.
   def use_callback(id, function) do
     pid = State.assert_pid()
     ids = State.append_id(id)
@@ -28,10 +34,9 @@ defmodule Ash.React.Api do
     fn -> send(pid, {:react_cb, callback}) end
   end
 
-  # Effect are all about guaranteed cleanups.
-  # Resources that require explicit cleanup
-  # to avoid accumulating overtime must be
-  # started and stopped from within an effect.
+  # Effects are all about guaranteed cleanups.
+  # Resources that require explicit cleanup to avoid accumulating
+  # overtime must be started and stopped from within an effect.
   def use_effect(id, function) do
     use_effect(id, nil, function)
   end
@@ -49,6 +54,9 @@ defmodule Ash.React.Api do
     end
 
     State.use_effect(ids, function, deps)
+
+    # Prevent leaks from internal state.
+    :ok
   end
 
   # def set_interval(millis, callback) do
