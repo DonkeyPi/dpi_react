@@ -20,53 +20,46 @@ defmodule Ash.React.UseEffect.Test do
 
     State.before_markup()
     assert Buffer.get() == "0"
-    Api.use_effect(:effect, fn -> Buffer.add("0") end)
+    Api.use_effect(:effect, fn -> Buffer.add("1") end)
     assert Buffer.get() == "0"
     State.after_markup()
 
-    assert Buffer.get() == "00"
+    assert Buffer.get() == "01"
   end
 
-  # test "use effect test - always effect with cleanup and removed check" do
-  #   Buffer.start()
+  test "use effect test - always effect with cleanup and removed check" do
+    Buffer.start()
 
-  #   # FORWARD RESETS SYNC TO TRUE
-  #   State.start()
+    State.start()
 
-  #   State.before_markup()
-  #   # MARKUP - SYNC READ / ASYNC WRITE
-  #   Api.use_effect(:effect, fn ->
-  #     Buffer.add("0")
-  #     fn -> Buffer.add("1") end
-  #   end)
+    State.before_markup()
 
-  #   assert Buffer.get() == ""
-  #   State.after_markup()
-  #   assert Buffer.get() == "0"
+    Api.use_effect(:effect, fn ->
+      Buffer.add("0")
+      fn -> Buffer.add("1") end
+    end)
 
-  #   # FORWARD RESETS SYNC TO TRUE
-  #   State.forward()
+    assert Buffer.get() == ""
+    State.after_markup()
+    assert Buffer.get() == "0"
 
-  #   State.before_markup()
-  #   assert Buffer.get() == "0"
-  #   # MARKUP - SYNC READ / ASYNC WRITE
-  #   Api.use_effect(:effect, fn ->
-  #     Buffer.add("0")
-  #     fn -> Buffer.add("1") end
-  #   end)
+    State.before_markup()
+    assert Buffer.get() == "0"
 
-  #   assert Buffer.get() == "0"
-  #   State.after_markup()
-  #   assert Buffer.get() == "010"
+    Api.use_effect(:effect, fn ->
+      Buffer.add("2")
+      fn -> Buffer.add("3") end
+    end)
 
-  #   # FORWARD RESETS SYNC TO TRUE
-  #   State.forward()
+    assert Buffer.get() == "0"
+    State.after_markup()
+    assert Buffer.get() == "012"
 
-  #   State.before_markup()
-  #   assert Buffer.get() == "010"
-  #   State.after_markup()
-  #   assert Buffer.get() == "0101"
-  # end
+    State.before_markup()
+    assert Buffer.get() == "012"
+    State.after_markup()
+    assert Buffer.get() == "0123"
+  end
 
   # test "use effect test - once effect with cleanup and removed check" do
   #   Buffer.start()

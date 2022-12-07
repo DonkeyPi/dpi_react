@@ -42,17 +42,7 @@ defmodule Ash.React.Api do
   def use_effect(id, deps, callback) do
     _pid = State.assert_pid()
     ids = State.append_id(id)
-
-    function = fn ->
-      cleanup = callback.()
-
-      if is_function(cleanup) do
-        State.set_cleanup(ids, cleanup)
-      end
-    end
-
-    State.use_effect(ids, function, deps)
-
+    State.use_effect(ids, callback, deps)
     # Prevent leaks from internal state.
     :ok
   end
