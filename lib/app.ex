@@ -12,6 +12,8 @@ defmodule Ash.React.App do
     loop(driver, onevt, func, opts)
   end
 
+  defp nop(), do: fn -> nil end
+
   # Reliable code should not depend
   # on proper on exit effects cleanup.
   # Port drivers may die at any time.
@@ -48,21 +50,21 @@ defmodule Ash.React.App do
     State.before_markup()
     build = fn -> func.(opts) end
     markup = Builder.build(build, &visitor/2)
-    State.assert_root()
     State.after_markup()
-    {id, model} = realize(driver, markup)
+    {id, model} = upgrade(driver, markup)
     :ok = Driver.render(driver, id, model)
-    State.assert_root()
-    State.forward()
+    # Trigger a new cycle if changes present.
+    count = State.get_changes()
+    if count > 0, do: send(self(), {:react_cb, &nop/0})
   end
 
-  defp realize(driver, markup) do
+  defp upgrade(driver, markup) do
     {id, handler, props, children} = markup
     ids = State.push_id(id)
 
     children =
       for child <- children do
-        realize(driver, child)
+        upgrade(driver, child)
       end
 
     ^id = State.pop_id()

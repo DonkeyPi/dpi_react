@@ -28,36 +28,41 @@ Demo.run_and_wait(Driver, opts)
   - Setup driver
   - Start state
 - Wait event
-- `Sync writes start here`
 - Handle event
   - On UI event
     - Handle event (driver)
     - Can change UI model *
-    - Can trigger react state change
+    - `Can trigger react state changes`
   - On react callback event
     - Execute callback directly
-    - Can trigger react state change
+    - `Can trigger react state changes`
 - Apply effects (from state diff)
+  - Calculate triggered effect by state change
+  - Get cleanups for triggered effects
+  - `Restart the state caches`
+  - From here on setters overwrite each other
+    - Changes cache prevent missing triggers
   - Execute cleanups of about to fire effects
   - Execute triggered effects
-    - Cleanups get registered after exec
-  - Can trigger react state change
-- `Sync writes end here`
+    - New cleanups get registered here
+  - `Can trigger react state changes`
 - Build markup (from updated state)
+  - `State expected freezed during markup`
   - `This is the only place to read state`
   - This is the only place where APIs are called
   - The react API consist of use_XXXX imports
+  - `The body of the markup may trigger setters`
 - Apply cleanups (from markup diff)
   - Cleanups of removed effects
-  - Can trigger react state change
-- Update model (from new markup)
-  - Driver should no change react state
-  - Driver should no trigger UI events
-  - Driver misbehaviour must not impact
+  - `Can trigger react state changes`
+- Upgrade model (from new markup)
+  - `The model upgrade may trigger setters`
+  - `The model upgrade may trigger UI events`
+  - on_visible and similars would trigger here
+  - on_change and similars would trigger here
   - New nodes are initialized
   - Existing nodes are updated
   - Can change UI model *
 - Render model (driver)
-- Move react state forward (current to previous)
-  - Previous data still accesible as default
+- `Trigger callback if changes present`
 - Go to wait event

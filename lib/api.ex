@@ -8,14 +8,12 @@ defmodule Ash.React.Api do
 
     {value,
      fn value ->
-       case pid == self() and State.sync?() do
-         true ->
-           # Setter in callbacks run immediately.
+       case self() do
+         ^pid ->
            State.set_state(ids, value)
 
          _ ->
-           # Async to support set_state from other processes
-           # and whenever it is run outside a callback.
+           # Async to support set_state from other processes.
            callback = fn -> State.set_state(ids, value) end
            send(pid, {:react_cb, callback})
        end

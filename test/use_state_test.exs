@@ -3,49 +3,129 @@ defmodule Ash.React.UseState.Test do
   alias Ash.React.State
   alias Ash.React.Api
 
-  test "use state test" do
-    # FORWARD RESETS SYNC TO TRUE
+  test "use state test - initial honored" do
     State.start()
 
-    # MARKUP - SYNC READ / ASYNC WRITE
-    State.sync?(false)
-    {id, set_id} = Api.use_state(:id, :initial)
+    State.before_markup()
+    {id, _set_id} = Api.use_state(:id, :initial)
     assert id == :initial
+    State.after_markup()
+  end
 
-    # This will be overwriten below.
-    set_id.(:value)
+  test "use state test - duplicated id detected" do
+    State.start()
+
+    State.before_markup()
+    {id, _set_id} = Api.use_state(:id, :initial)
+    assert id == :initial
 
     # Cannot use same id twice on same cycle.
     assert_raise RuntimeError, "Duplicated state id: [:id]", fn ->
       Api.use_state(:id, :initial)
     end
 
-    # Last call before forward wins.
-    set_id.(:final)
+    State.after_markup()
+  end
 
-    # FORWARD RESETS SYNC TO TRUE
-    State.forward()
+  test "use state test - setters outside markup are honored" do
+    State.start()
 
-    # EVENTS - SYNC WRITE / CAPTURED READS
-    Tester.on_callback()
-    Tester.on_callback()
+    State.before_markup()
+    {id, set_id} = Api.use_state(:id, :initial)
+    assert id == :initial
+    State.after_markup()
 
-    # MARKUP - SYNC READ / ASYNC WRITE
-    State.sync?(false)
+    set_id.(:value)
+
+    State.before_markup()
     {id, _set_id} = Api.use_state(:id, :initial)
-    assert id == :final
+    assert id == :value
+    State.after_markup()
+  end
 
-    # Setters can be called from any process.
-    spawn_link(fn -> set_id.(:remote) end)
+  test "use state test - setters inside markup are honored" do
+    State.start()
 
-    # FORWARD RESETS SYNC TO TRUE
-    State.forward()
+    State.before_markup()
+    {id, set_id} = Api.use_state(:id, :initial)
+    assert id == :initial
+    set_id.(:value)
+    State.after_markup()
 
-    # EVENTS - SYNC WRITE / CAPTURED READS
-    Tester.on_callback()
-
-    State.sync?(false)
+    State.before_markup()
     {id, _set_id} = Api.use_state(:id, :initial)
-    assert id == :remote
+    assert id == :value
+    State.after_markup()
+  end
+
+  test "use state test - state is frozen on before_markup" do
+    State.start()
+
+    State.before_markup()
+    {id, set_id} = Api.use_state(:id, :initial)
+    assert id == :initial
+    State.after_markup()
+
+    set_id.(:frozen)
+
+    State.before_markup()
+    # This setter is delayed until next markup build.
+    set_id.(:value)
+    {id, _set_id} = Api.use_state(:id, :initial)
+    assert id == :frozen
+    State.after_markup()
+
+    # Value is honored on next markup build.
+    State.before_markup()
+    {id, _set_id} = Api.use_state(:id, :initial)
+    assert id == :value
+    State.after_markup()
+  end
+
+  test "use state test - state is reset after a missing cycle" do
+    State.start()
+
+    State.before_markup()
+    {id, set_id} = Api.use_state(:id, :initial)
+    assert id == :initial
+    State.after_markup()
+
+    set_id.(:value)
+
+    State.before_markup()
+    {id, _set_id} = Api.use_state(:id, :initial)
+    assert id == :value
+    State.after_markup()
+
+    # Missing cycle
+    State.before_markup()
+    State.after_markup()
+
+    State.before_markup()
+    {id, _set_id} = Api.use_state(:id, :initial)
+    assert id == :initial
+    State.after_markup()
+  end
+
+  test "use state test - state is preserved even if not written to" do
+    State.start()
+
+    State.before_markup()
+    {id, set_id} = Api.use_state(:id, :initial)
+    assert id == :initial
+    State.after_markup()
+
+    set_id.(:value)
+
+    State.before_markup()
+    {id, _set_id} = Api.use_state(:id, :initial)
+    assert id == :value
+    State.after_markup()
+
+    # Not written in last cycle
+    State.before_markup()
+    {id, _set_id} = Api.use_state(:id, :initial)
+    assert id == :value
+    State.after_markup()
   end
 end

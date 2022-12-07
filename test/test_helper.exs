@@ -1,11 +1,19 @@
 ExUnit.start()
 
 defmodule Tester do
+  alias Ash.React.State
+  defp nop(), do: fn -> nil end
+
   def on_callback() do
     receive do
       {:react_cb, callback} ->
         callback.()
     end
+  end
+
+  def on_changes() do
+    count = State.get_changes()
+    if count > 0, do: send(self(), {:react_cb, &nop/0})
   end
 end
 

@@ -1,22 +1,16 @@
 defmodule Ash.React.State do
   def start() do
     # assert_raise may leave partial state behind
-    put({self(), map(), map()})
+    put({self(), new(), new()})
   end
 
-  def forward() do
-    {pid, curr, _prev} = get()
-    put({pid, map(), curr})
-  end
-
-  def map() do
+  defp new() do
     %{
       ids: [],
       fstate: %{},
       vstate: %{},
       changes: %{},
       callbacks: %{},
-      sync?: true,
       effects: %{},
       ieffects: [],
       ceffects: %{}
@@ -24,7 +18,7 @@ defmodule Ash.React.State do
   end
 
   def stop(), do: put(nil)
-  defp get(), do: Process.get(__MODULE__)
+  def get(), do: Process.get(__MODULE__)
   defp put(state), do: Process.put(__MODULE__, state)
 
   def assert_pid() do
@@ -38,15 +32,12 @@ defmodule Ash.React.State do
     end
   end
 
-  def sync?() do
+  defp assert_root() do
     {_pid, curr, _prev} = get()
-    curr.sync?
-  end
 
-  def sync?(value) do
-    {pid, curr, prev} = get()
-    curr = %{curr | sync?: value}
-    put({pid, curr, prev})
+    unless curr.ids == [] do
+      raise("State path is not root: #{inspect(curr.ids)}")
+    end
   end
 
   ###########################################################
@@ -72,14 +63,6 @@ defmodule Ash.React.State do
     [id | curr.ids]
   end
 
-  def assert_root() do
-    {_pid, curr, _prev} = get()
-
-    unless curr.ids == [] do
-      raise("State path is not root: #{inspect(curr.ids)}")
-    end
-  end
-
   ###########################################################
   # State handling
   ###########################################################
@@ -87,22 +70,18 @@ defmodule Ash.React.State do
   def use_state(id, value) do
     {pid, curr, prev} = get()
     fstate = curr.fstate
-    vstate = curr.vstate
 
     if Map.has_key?(fstate, id) do
       raise("Duplicated state id: #{inspect(id)}")
     end
 
+    # Mark this state id as active.
     fstate = Map.put(fstate, id, true)
     curr = %{curr | fstate: fstate}
 
+    # Get value from frozen previous state.
+    # All values need to be carried on state transition.
     value = Map.get(prev.vstate, id, value)
-    value = Map.get(vstate, id, value)
-    # This next put ensures it is carried on
-    # next forward even if no set is issued
-    # on the current cycle.
-    vstate = Map.put(vstate, id, value)
-    curr = %{curr | vstate: vstate}
 
     put({pid, curr, prev})
     value
@@ -111,6 +90,7 @@ defmodule Ash.React.State do
   def set_state(id, value) do
     {pid, curr, prev} = get()
 
+    # Write value to current state.
     vstate = curr.vstate
 
     changes = curr.changes
@@ -126,6 +106,14 @@ defmodule Ash.React.State do
     put({pid, curr, prev})
   end
 
+  def get_changes() do
+    {_pid, curr, _prev} = get()
+
+    for {_id, count} <- curr.changes, reduce: 0 do
+      sum -> sum + count
+    end
+  end
+
   ###########################################################
   # Callback handling
   ###########################################################
@@ -138,6 +126,7 @@ defmodule Ash.React.State do
       raise("Duplicated callback id: #{inspect(id)}")
     end
 
+    # Put on current to always have the newest function.
     callbacks = Map.put(callbacks, id, function)
     curr = Map.put(curr, :callbacks, callbacks)
     put({pid, curr, prev})
@@ -145,7 +134,12 @@ defmodule Ash.React.State do
 
   def get_callback(id) do
     {_pid, curr, prev} = get()
-    # precallbacks required to pass callbacks as effect cleanups
+    # Callbacks that are used as effects should be defined
+    # on same node to shared same lifetime.
+    # Callbacks that are used as effects cleanups may be
+    # called after or because the node is gone so they
+    # need to default to previous state.
+    # All callbacks need to be carried on state transition.
     callback = Map.get(prev.callbacks, id, fn -> nil end)
     Map.get(curr.callbacks, id, callback)
   end
@@ -221,19 +215,36 @@ defmodule Ash.React.State do
       end
 
     # Save the trimmed down cleanups to current state.
-    prev = Map.put(prev, :ceffects, %{})
-    curr = Map.put(curr, :ceffects, ceffects)
-    put({pid, curr, prev})
+    # prev = Map.put(prev, :ceffects, %{})
+    # curr = Map.put(curr, :changes, %{})
+    # curr = Map.put(curr, :ceffects, ceffects)
+
+    # State transition
+
+    # Preserve previous value for active ids.
+    fstate = curr.fstate
+
+    pvstate =
+      Map.merge(prev.vstate, curr.vstate)
+      |> Map.filter(fn {id, _} -> Map.has_key?(fstate, id) end)
+
+    prev = curr
+    prev = %{prev | vstate: pvstate}
+    put({pid, new(), prev})
 
     # Apply cleanups then apply triggered effects (in that order).
-    sync?(true)
     Enum.each(cleanups, fn {_id, cleanup} -> cleanup.() end)
     Enum.each(triggered, fn {_id, {function, _deps}} -> function.() end)
-    sync?(false)
     # Cleanups for triggered effect get registered at this point.
+
+    # Raise here means model upgrade is corrupt
+    assert_root()
   end
 
   def after_markup() do
+    # Raise here means markup build is corrupt
+    assert_root()
+
     {pid, curr, prev} = get()
     effects = curr.effects
     ieffects = curr.ieffects
@@ -292,10 +303,8 @@ defmodule Ash.React.State do
     put({pid, curr, prev})
 
     # Apply cleanups then apply triggered effects (in that order).
-    sync?(true)
     Enum.each(cleanups, fn {_id, cleanup} -> cleanup.() end)
     Enum.each(triggered, fn {_id, {function, _deps}} -> function.() end)
-    sync?(false)
     # Cleanups for triggered effect get registered at this point.
   end
 end
