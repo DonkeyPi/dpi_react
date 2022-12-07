@@ -6,7 +6,6 @@ defmodule Ash.React.Timer do
     put({self(), 0, %{}})
   end
 
-  def stop(), do: put(nil)
   defp get(), do: Process.get(__MODULE__)
   defp put(state), do: Process.put(__MODULE__, state)
 
@@ -41,7 +40,7 @@ defmodule Ash.React.Timer do
       end
     end
 
-    # Increment count before timer.
+    # Increment count before set_timer.
     put({pid, count + 1, timers})
     set_timer(count, millis, callback)
     cleanup = fn -> del_timer(count) end

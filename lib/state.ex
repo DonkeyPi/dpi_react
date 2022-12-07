@@ -7,11 +7,6 @@ defmodule Ash.React.State do
     Timer.start()
   end
 
-  def stop() do
-    Timer.stop()
-    put(nil)
-  end
-
   defp get(), do: Process.get(__MODULE__)
   defp put(state), do: Process.put(__MODULE__, state)
 
@@ -26,6 +21,18 @@ defmodule Ash.React.State do
     }
   end
 
+  defp assert_root() do
+    {_pid, curr, _prev} = get()
+
+    unless curr.ids == [] do
+      raise("State path is not root: #{inspect(curr.ids)}")
+    end
+  end
+
+  ###########################################################
+  # Pid handling
+  ###########################################################
+
   def assert_pid() do
     with tuple <- get(),
          true <- tuple != nil,
@@ -34,14 +41,6 @@ defmodule Ash.React.State do
       pid
     else
       _ -> raise "Invalid caller: #{inspect(self())}"
-    end
-  end
-
-  defp assert_root() do
-    {_pid, curr, _prev} = get()
-
-    unless curr.ids == [] do
-      raise("State path is not root: #{inspect(curr.ids)}")
     end
   end
 
@@ -275,34 +274,34 @@ defmodule Ash.React.State do
     put({pid, curr, prev})
   end
 
-  defp clean_effect(flag, id, effect) do
-    if flag do
-      case Map.get(effect, :cleanup) do
-        nil -> :nop
-        cleanup -> cleanup.()
-      end
+  defp clean_effect(true, id, effect) do
+    case Map.get(effect, :cleanup) do
+      nil -> :nop
+      cleanup -> cleanup.()
+    end
 
-      {id, Map.delete(effect, :cleanup)}
-    else
-      {id, effect}
+    {id, Map.delete(effect, :cleanup)}
+  end
+
+  defp clean_effect(false, id, effect) do
+    {id, effect}
+  end
+
+  defp apply_effect(true, id, effect) do
+    case Map.get(effect, :cleanup) do
+      nil -> :nop
+      cleanup -> cleanup.()
+    end
+
+    cleanup = effect.function.()
+
+    case is_function(cleanup, 0) do
+      true -> {id, Map.put(effect, :cleanup, cleanup)}
+      _ -> {id, Map.delete(effect, :cleanup)}
     end
   end
 
-  defp apply_effect(flag, id, effect) do
-    if flag do
-      case Map.get(effect, :cleanup) do
-        nil -> :nop
-        cleanup -> cleanup.()
-      end
-
-      cleanup = effect.function.()
-
-      case is_function(cleanup, 0) do
-        true -> {id, Map.put(effect, :cleanup, cleanup)}
-        _ -> {id, Map.delete(effect, :cleanup)}
-      end
-    else
-      {id, effect}
-    end
+  defp apply_effect(false, id, effect) do
+    {id, effect}
   end
 end
