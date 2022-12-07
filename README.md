@@ -7,10 +7,10 @@ defmodule Demo do
 
   def init(opts) do
     on_event = fn e -> log("Event #{inspect(e)}") end
-    run(&main/2, Keyword.put(opts, :on_event, on_event))
+    run(&main/1, Keyword.put(opts, :on_event, on_event))
   end
 
-  def main(_react, %{width: width, height: height}) do
+  def main(%{width: width, height: height}) do
     panel :main, width: width, height: height do
       label(:label, text: "Demo")
     end
@@ -21,6 +21,18 @@ alias Ash.Tui.Driver
 opts = [width: 800, height: 480, title: "Demo"]
 Demo.run_and_wait(Driver, opts)
 ```
+
+## Rules
+
+- State changes are reflected until next markup rendering.
+- There are three types of effects: once, always, and change.
+- Change effects are executed just before markup rendering.
+- Once and always effects are ejecuted just after rendering.
+- Cleanups for removed effects are executed after rendering.
+- Effects apply previous cleanups just before executing again.
+- Execution order of effects and cleanups is not guaranteed.
+- Removal of an effect dep is like it not changing anymore.
+- Redefinition of effect deps only allowed after removal.
 
 ## App Cycle
 
@@ -47,7 +59,7 @@ Demo.run_and_wait(Driver, opts)
     - New cleanups get registered here
   - `Can trigger react state changes`
 - Build markup (from updated state)
-  - `State expected freezed during markup`
+  - `State expected fronzen during markup`
   - `This is the only place to read state`
   - This is the only place where APIs are called
   - The react API consist of use_XXXX imports

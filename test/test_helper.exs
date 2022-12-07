@@ -15,6 +15,17 @@ defmodule Tester do
     count = State.get_changes()
     if count > 0, do: send(self(), {:react_cb, &nop/0})
   end
+
+  def effect_callback(v1, v2 \\ nil) do
+    fn ->
+      Buffer.add(v1)
+
+      case v2 do
+        nil -> :nop
+        _ -> fn -> Buffer.add(v2) end
+      end
+    end
+  end
 end
 
 defmodule Buffer do

@@ -88,6 +88,9 @@ defmodule Ash.React.State do
   def set_state(id, value) do
     {pid, curr, prev} = get()
 
+    # Checking for id in fstate here prevents
+    # the frozen on before_markup from working.
+
     # Write value to current state.
     vstate = curr.vstate
 
@@ -208,14 +211,31 @@ defmodule Ash.React.State do
 
     {pid, curr, prev} = get()
 
-    # Execute cleanups for removed effects
+    # Execute cleanups for removed or redefined effects
     effects = curr.effects
 
     peffects =
       prev.effects
-      |> Enum.map(fn {id, effect} ->
-        removed = not Map.has_key?(effects, id)
-        clean_effect(removed, id, effect)
+      |> Enum.map(fn {id, peffect} ->
+        clean =
+          case Map.get(effects, id) do
+            nil ->
+              true
+
+            effect ->
+              equal = peffect.deps == effect.deps
+              # function comparison always returns false
+              if not equal do
+                pdeps = peffect.deps
+                deps = effect.deps
+                error = "#{inspect(id)} => #{inspect(pdeps)} -> #{inspect(deps)}"
+                raise("Unsupported effect deps change: #{error}")
+              end
+
+              false
+          end
+
+        clean_effect(clean, id, peffect)
       end)
       |> Enum.into(%{})
 
@@ -233,12 +253,13 @@ defmodule Ash.React.State do
         triggered =
           case deps do
             nil -> true
-            [] -> true
+            [] -> not Map.has_key?(peffects, id)
             _ -> false
           end
 
         apply_effect(triggered, id, effect)
       end)
+      |> Enum.into(%{})
 
     curr = %{curr | effects: effects}
 
