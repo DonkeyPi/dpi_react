@@ -22,8 +22,10 @@ opts = [width: 800, height: 480, title: "Demo"]
 Demo.run_and_wait(Driver, opts)
 ```
 
-## Rules
+## App Rules
 
+- All setters, callbacks, effects, cleanups and timers run
+on the app process.
 - State changes are reflected until next markup rendering.
 - There are three types of effects: once, always, and change.
 - Change effects are executed just before markup rendering.

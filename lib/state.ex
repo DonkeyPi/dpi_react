@@ -1,23 +1,30 @@
 defmodule Ash.React.State do
+  alias Ash.React.Timer
+
   def start() do
     # assert_raise may leave partial state behind
     put({self(), new(), new()})
+    Timer.start()
   end
+
+  def stop() do
+    Timer.stop()
+    put(nil)
+  end
+
+  defp get(), do: Process.get(__MODULE__)
+  defp put(state), do: Process.put(__MODULE__, state)
 
   defp new() do
     %{
       ids: [],
-      fstate: %{},
-      vstate: %{},
+      flags: %{},
+      values: %{},
       changes: %{},
       callbacks: %{},
       effects: %{}
     }
   end
-
-  def stop(), do: put(nil)
-  def get(), do: Process.get(__MODULE__)
-  defp put(state), do: Process.put(__MODULE__, state)
 
   def assert_pid() do
     with tuple <- get(),
@@ -67,19 +74,19 @@ defmodule Ash.React.State do
 
   def use_state(id, value) do
     {pid, curr, prev} = get()
-    fstate = curr.fstate
+    flags = curr.flags
 
-    if Map.has_key?(fstate, id) do
+    if Map.has_key?(flags, id) do
       raise("Duplicated state id: #{inspect(id)}")
     end
 
     # Mark this state id as active.
-    fstate = Map.put(fstate, id, true)
-    curr = %{curr | fstate: fstate}
+    flags = Map.put(flags, id, true)
+    curr = %{curr | flags: flags}
 
     # Get value from frozen previous state.
     # All values need to be carried on state transition.
-    value = Map.get(prev.vstate, id, value)
+    value = Map.get(prev.values, id, value)
 
     put({pid, curr, prev})
     value
@@ -88,21 +95,23 @@ defmodule Ash.React.State do
   def set_state(id, value) do
     {pid, curr, prev} = get()
 
-    # Checking for id in fstate here prevents
+    # Checking for active id here prevents
     # the frozen on before_markup from working.
 
+    # Allow for transients by checking against
+    # prev value and using a boolean flag.
+    # Rogue setters impact here.
+
     # Write value to current state.
-    vstate = curr.vstate
+    values = curr.values
 
     changes = curr.changes
-    count = Map.get(changes, id, 0)
-    equal = value == vstate[id]
-    count = if equal, do: count, else: count + 1
-    changes = Map.put(changes, id, count)
+    equal = value == Map.get(prev.values, id)
+    changes = Map.put(changes, id, not equal)
     curr = %{curr | changes: changes}
 
-    vstate = Map.put(vstate, id, value)
-    curr = %{curr | vstate: vstate}
+    values = Map.put(values, id, value)
+    curr = %{curr | values: values}
 
     put({pid, curr, prev})
   end
@@ -110,8 +119,8 @@ defmodule Ash.React.State do
   def get_changes() do
     {_pid, curr, _prev} = get()
 
-    for {_id, count} <- curr.changes, reduce: 0 do
-      sum -> sum + count
+    for {_id, flag} <- curr.changes, reduce: 0 do
+      sum -> if flag, do: sum + 1, else: sum
     end
   end
 
@@ -182,7 +191,7 @@ defmodule Ash.React.State do
           case deps do
             nil -> false
             [] -> false
-            _ -> Enum.all?(deps, fn dep -> Map.get(changes, [dep | parent], 0) > 0 end)
+            _ -> Enum.all?(deps, fn dep -> Map.get(changes, [dep | parent], false) end)
           end
 
         apply_effect(triggered, id, effect)
@@ -192,12 +201,12 @@ defmodule Ash.React.State do
     # State transition
 
     # Preserve previous value for active ids.
-    fstate = curr.fstate
-    mvstate = Map.merge(prev.vstate, curr.vstate)
-    mvstate = mvstate |> Map.filter(fn {id, _} -> Map.has_key?(fstate, id) end)
+    flags = curr.flags
+    mvalues = Map.merge(prev.values, curr.values)
+    mvalues = mvalues |> Map.filter(fn {id, _} -> Map.has_key?(flags, id) end)
 
     prev = curr
-    prev = %{prev | vstate: mvstate}
+    prev = %{prev | values: mvalues}
     prev = %{prev | effects: effects}
     put({pid, new(), prev})
 

@@ -9,8 +9,10 @@ defmodule Ash.React.Macros do
   defmacro app() do
     quote do
       import Ash.React.Api
-      import Ash.React.App, only: [run: 2]
       import Ash.React.Helpers
+      alias Ash.React.App
+
+      def run(func, opts), do: App.run(func, opts)
 
       def child_spec(opts) do
         %{

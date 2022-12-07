@@ -12,6 +12,13 @@ defmodule Ash.React.App do
     loop(driver, onevt, func, opts)
   end
 
+  def sync(pid, function) do
+    case self() do
+      ^pid -> function.()
+      _ -> send(pid, {:react_cb, function})
+    end
+  end
+
   defp nop(), do: fn -> nil end
 
   # Reliable code should not depend
