@@ -19,7 +19,7 @@ defmodule Sample.MixProject do
         :logger,
         :ash_app,
         :ash_input,
-        :ash_tui_scr
+        :ash_term
       ]
     ]
   end
@@ -31,7 +31,7 @@ defmodule Sample.MixProject do
       {:ash_app, path: "../../ash_app"},
       {:ash_tool, path: "../../ash_tool"},
       {:ash_input, path: "../../ash_input"},
-      {:ash_tui_scr, path: "../../ash_tui_scr"}
+      {:ash_term, path: "../../ash_term"}
     ]
   end
 end
