@@ -60,11 +60,8 @@ defmodule Demo do
   end
 end
 
-alias Ash.Tui.Driver
-alias Ash.Tui.Scr.Screen
-
 opts = [
-  screen: Screen,
+  term: Ash.Term.Driver,
   rows: "30",
   cols: "100",
   fontpt: "12.8",
@@ -72,4 +69,4 @@ opts = [
   title: "Color Demo"
 ]
 
-Demo.run_and_wait(Driver, opts)
+Demo.run_and_wait(Ash.Tui.Driver, opts)

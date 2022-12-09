@@ -1,4 +1,4 @@
-alias Ash.Tui.Scr.Port
+alias Ash.Term.Port
 
 # Found this in Pango documentation about Cairo.
 # The default is 96dpi (dots per inch) which corresponds to an average screen as output medium.
