@@ -3,13 +3,11 @@ defmodule Ash.React.App do
   alias Ash.React.Driver
   alias Ash.Node.Builder
 
-  def run(func, opts) do
+  def run(func, onevt, opts) do
     State.start()
-    {driver, opts} = Keyword.pop!(opts, :driver)
-    {onevt, opts} = Keyword.pop(opts, :on_event, nil)
     opts = Enum.into(opts, %{})
-    update(driver, func, opts)
-    loop(driver, onevt, func, opts)
+    update(func, opts)
+    loop(onevt, func, opts)
   end
 
   def sync(pid, function) do
@@ -24,13 +22,13 @@ defmodule Ash.React.App do
   # Reliable code should not depend
   # on proper on exit effects cleanup.
   # Port drivers may die at any time.
-  defp loop(driver, onevt, func, opts) do
+  defp loop(onevt, func, opts) do
     receive do
       # Flag setters to apply immediatelly.
       {:react_cb, callback} ->
         callback.()
-        update(driver, func, opts)
-        loop(driver, onevt, func, opts)
+        update(func, opts)
+        loop(onevt, func, opts)
 
       :react_stop ->
         # FIXME Attempt a clean stop.
@@ -40,11 +38,11 @@ defmodule Ash.React.App do
       msg ->
         if onevt != nil, do: onevt.(msg)
 
-        case Driver.handles?(driver, msg) do
+        case Driver.handles?(msg) do
           true ->
-            :ok = Driver.handle(driver, msg)
-            update(driver, func, opts)
-            loop(driver, onevt, func, opts)
+            :ok = Driver.handle(msg)
+            update(func, opts)
+            loop(onevt, func, opts)
 
           _ ->
             raise "Unexpected #{inspect(msg)}"
@@ -52,31 +50,31 @@ defmodule Ash.React.App do
     end
   end
 
-  defp update(driver, func, opts) do
+  defp update(func, opts) do
     # Make setters async until next forward.
     State.before_markup()
     build = fn -> func.(opts) end
     markup = Builder.build(build, &visitor/2)
     State.after_markup()
-    {id, model} = upgrade(driver, markup)
-    :ok = Driver.render(driver, id, model)
+    {id, model} = upgrade(markup)
+    :ok = Driver.render(id, model)
     # Trigger a new cycle if changes present.
     count = State.get_changes()
     if count > 0, do: send(self(), {:react_cb, &nop/0})
   end
 
-  defp upgrade(driver, markup) do
+  defp upgrade(markup) do
     {id, handler, props, children} = markup
     ids = State.push_id(id)
 
     children =
       for child <- children do
-        upgrade(driver, child)
+        upgrade(child)
       end
 
     ^id = State.pop_id()
     node = {handler, props, children}
-    model = Driver.update(driver, ids, node)
+    model = Driver.update(ids, node)
     {id, model}
   end
 

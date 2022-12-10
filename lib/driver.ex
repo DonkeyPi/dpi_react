@@ -17,10 +17,17 @@ defmodule Ash.React.Driver do
   # Updates branches of the model from children up to root.
   @callback update(ids :: list(), node :: tuple()) :: model :: any()
 
-  def start(module, opts), do: module.start(opts)
-  def opts(module), do: module.opts()
-  def handles?(module, msg), do: module.handles?(msg)
-  def handle(module, event), do: module.handle(event)
-  def update(module, ids, node), do: module.update(ids, node)
-  def render(module, id, model), do: module.render(id, model)
+  defp get(key), do: Process.get({__MODULE__, key})
+  defp put(key, data), do: Process.put({__MODULE__, key}, data)
+
+  def start(module, opts) do
+    put(:module, module)
+    :ok = module.start(opts)
+  end
+
+  def opts(), do: get(:module).opts()
+  def handles?(msg), do: get(:module).handles?(msg)
+  def handle(event), do: get(:module).handle(event)
+  def update(ids, node), do: get(:module).update(ids, node)
+  def render(id, model), do: get(:module).render(id, model)
 end

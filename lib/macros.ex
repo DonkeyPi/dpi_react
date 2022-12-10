@@ -12,7 +12,7 @@ defmodule Ash.React.Macros do
       import Ash.React.Helpers
       alias Ash.React.App
 
-      def run(func, opts), do: App.run(func, opts)
+      def run(func, onevt, opts), do: App.run(func, onevt, opts)
 
       def child_spec(opts) do
         %{
@@ -45,9 +45,7 @@ defmodule Ash.React.Macros do
             # GUI drivers have the following mandatory options:
             # - Title
             # - Width and Height in pixels
-            Driver.opts(driver)
-            |> Keyword.put(:driver, driver)
-            |> init()
+            Driver.opts() |> init()
 
             # Init is the user defined function that must in
             # turn call Ash.React.App.run after adjusting opts.
