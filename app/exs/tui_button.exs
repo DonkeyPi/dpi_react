@@ -44,11 +44,15 @@ end
 
 opts = [
   term: Ash.Term.Driver,
-  rows: "30",
-  cols: "100",
+  rows: 30,
+  cols: 100,
+  width: 800,
+  height: 480,
   fontpt: "12.8",
-  bgcolor: "404040",
-  title: "Demo"
+  motion: 1,
+  pointer: 1,
+  bgcolor: "000000",
+  title: "Button Demo"
 ]
 
 Demo.run_and_wait(Ash.Tui.Driver, opts)

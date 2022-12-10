@@ -62,9 +62,13 @@ end
 
 opts = [
   term: Ash.Term.Driver,
-  rows: "30",
-  cols: "100",
+  rows: 30,
+  cols: 100,
+  width: 800,
+  height: 480,
   fontpt: "12.8",
+  motion: 1,
+  pointer: 1,
   bgcolor: "000000",
   title: "Color Demo"
 ]

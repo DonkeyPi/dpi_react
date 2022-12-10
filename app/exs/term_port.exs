@@ -7,14 +7,17 @@ alias Ash.Term.Port
 # rpi4 official display works with 100x30x12.8 (16pt * 0.8 factor, with +2 vertical spacing and celing)
 port =
   Port.open(
-    cols: "100",
-    rows: "30",
-    bgcolor: "404040",
+    rows: 30,
+    cols: 100,
+    width: 800,
+    height: 480,
     fontpt: "12.8",
-    title: "Demo"
+    motion: 1,
+    pointer: 1,
+    bgcolor: "404040",
+    title: "Color Demo"
   )
 
-# Port.write!(port, "m")
 Port.write!(port, "s")
 Port.write!(port, "F228866")
 Port.write!(port, "B303030")
