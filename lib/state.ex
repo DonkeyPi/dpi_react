@@ -144,10 +144,10 @@ defmodule Ash.React.State do
   def get_callback(id) do
     {_pid, curr, prev} = get()
     # Callbacks that are used as effects should be defined
-    # on same node to shared same lifetime.
-    # Callbacks that are used as effects cleanups may be
-    # called after or because the node is gone so they
-    # need to default to previous state.
+    # on the same node to share the same lifetime.
+    # Callbacks that are used as effect's cleanups may be
+    # called after the node is gone so they need to default
+    # to previous state.
     # All callbacks need to be carried on state transition.
     callback = Map.get(prev.callbacks, id, fn -> nil end)
     Map.get(curr.callbacks, id, callback)
@@ -177,7 +177,6 @@ defmodule Ash.React.State do
 
     # Execute current triggered effects (against current changes).
     # Ignore always and once effects (nil or empty deps).
-    # Use with to capture used vars with in a block.
     changes = curr.changes
 
     effects =
@@ -209,17 +208,17 @@ defmodule Ash.React.State do
     prev = %{prev | effects: effects}
     put({pid, new(), prev})
 
-    # Raise here means model upgrade is corrupt
+    # Raise here means model upgrade is corrupt.
     assert_root()
   end
 
   def after_markup() do
-    # Raise here means markup build is corrupt
+    # Raise here means markup build is corrupt.
     assert_root()
 
     {pid, curr, prev} = get()
 
-    # Execute cleanups for removed or redefined effects
+    # Execute cleanups for removed or redefined effects.
     effects = curr.effects
 
     peffects =
@@ -232,7 +231,8 @@ defmodule Ash.React.State do
 
             effect ->
               equal = peffect.deps == effect.deps
-              # function comparison always returns false
+              # Redefinition is ok after gone for once cycle.
+              # Function comparison always returns false.
               if not equal do
                 pdeps = peffect.deps
                 deps = effect.deps
