@@ -1,4 +1,4 @@
-defmodule Ash.React.UseState.Test do
+defmodule UseStateTest do
   use ExUnit.Case
   alias Ash.React.State
   alias Ash.React.Api
