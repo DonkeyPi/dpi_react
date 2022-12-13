@@ -223,7 +223,7 @@ defmodule Ash.React.UseEffect.Test do
     State.before_markup()
     {id, set_id} = Api.use_state(:id, 0)
     assert id == 0
-    Api.use_effect(:e, [:id], Tester.effect_callback("0", "1"))
+    Api.use_effect(:e, [:id, :od], Tester.effect_callback("0", "1"))
     assert Buffer.get() == ""
     State.after_markup()
     assert Buffer.get() == ""
@@ -236,7 +236,7 @@ defmodule Ash.React.UseEffect.Test do
     # trigger change during markup build
     set_id.(2)
     Api.use_state(:id, 0)
-    Api.use_effect(:e, [:id], Tester.effect_callback("2", "3"))
+    Api.use_effect(:e, [:id, :od], Tester.effect_callback("2", "3"))
     assert Buffer.get() == "0"
     State.after_markup()
     assert Buffer.get() == "0"
@@ -245,7 +245,7 @@ defmodule Ash.React.UseEffect.Test do
     State.before_markup()
     assert Buffer.get() == "012"
     Api.use_state(:id, 0)
-    Api.use_effect(:e, [:id], Tester.effect_callback("4", "5"))
+    Api.use_effect(:e, [:id, :od], Tester.effect_callback("4", "5"))
     assert Buffer.get() == "012"
     State.after_markup()
     assert Buffer.get() == "012"
@@ -256,7 +256,7 @@ defmodule Ash.React.UseEffect.Test do
     State.before_markup()
     assert Buffer.get() == "012"
     Api.use_state(:id, 0)
-    Api.use_effect(:e, [:id], Tester.effect_callback("6", "7"))
+    Api.use_effect(:e, [:id, :od], Tester.effect_callback("6", "7"))
     assert Buffer.get() == "012"
     State.after_markup()
     assert Buffer.get() == "012"
@@ -275,7 +275,7 @@ defmodule Ash.React.UseEffect.Test do
     State.before_markup()
     assert Buffer.get() == "0123"
     Api.use_state(:id, 0)
-    Api.use_effect(:e, [:id], Tester.effect_callback("8", "9"))
+    Api.use_effect(:e, [:id, :od], Tester.effect_callback("8", "9"))
     assert Buffer.get() == "0123"
     State.after_markup()
     assert Buffer.get() == "0123"
@@ -285,7 +285,7 @@ defmodule Ash.React.UseEffect.Test do
     State.before_markup()
     assert Buffer.get() == "01238"
     Api.use_state(:id, 0)
-    Api.use_effect(:e, [:id], Tester.effect_callback("A", "B"))
+    Api.use_effect(:e, [:id, :od], Tester.effect_callback("A", "B"))
     assert Buffer.get() == "01238"
     State.after_markup()
     assert Buffer.get() == "01238"

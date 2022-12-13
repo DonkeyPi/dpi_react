@@ -189,7 +189,7 @@ defmodule Ash.React.State do
           case deps do
             nil -> false
             [] -> false
-            _ -> Enum.all?(deps, fn dep -> Map.get(changes, [dep | parent], false) end)
+            _ -> Enum.any?(deps, fn dep -> Map.get(changes, [dep | parent], false) end)
           end
 
         apply_effect(triggered, id, effect)
