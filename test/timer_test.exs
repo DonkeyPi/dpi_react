@@ -1,4 +1,4 @@
-defmodule TimerTest do
+defmodule Ash.TimerTest do
   use ExUnit.Case
   alias Ash.React.State
   alias Ash.React.Api

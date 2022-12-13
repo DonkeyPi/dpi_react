@@ -1,4 +1,4 @@
-defmodule ReactTest do
+defmodule Ash.ReactTest do
   use ExUnit.Case
   alias Ash.React.State
 

@@ -1,4 +1,4 @@
-defmodule UseEffectTest do
+defmodule Ash.UseEffectTest do
   use ExUnit.Case
   alias Ash.React.State
   alias Ash.React.Api
