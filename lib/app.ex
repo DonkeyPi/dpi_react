@@ -66,6 +66,7 @@ defmodule Ash.React.App do
   defp upgrade(markup) do
     {id, handler, props, children} = markup
     ids = State.push_id(id)
+    :ok = Driver.push(id)
 
     children =
       for child <- children do
@@ -73,6 +74,7 @@ defmodule Ash.React.App do
       end
 
     ^id = State.pop_id()
+    :ok = Driver.pop()
     node = {handler, props, children}
     model = Driver.update(ids, node)
     {id, model}

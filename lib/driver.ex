@@ -17,6 +17,10 @@ defmodule Ash.React.Driver do
   # Updates branches of the model from children up to root.
   @callback update(ids :: list(), node :: tuple()) :: model :: any()
 
+  # Model upgrade navigation
+  @callback push(id :: any()) :: :ok
+  @callback pop() :: :ok
+
   defp get(key), do: Process.get({__MODULE__, key})
   defp put(key, data), do: Process.put({__MODULE__, key}, data)
 
@@ -26,6 +30,8 @@ defmodule Ash.React.Driver do
   end
 
   def opts(), do: get(:module).opts()
+  def pop(), do: get(:module).pop()
+  def push(id), do: get(:module).push(id)
   def handles?(msg), do: get(:module).handles?(msg)
   def handle(event), do: get(:module).handle(event)
   def update(ids, node), do: get(:module).update(ids, node)
