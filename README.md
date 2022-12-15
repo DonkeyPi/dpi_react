@@ -15,6 +15,7 @@ on the app process.
 - Execution order of effects and cleanups is not guaranteed.
 - Removal of an effect dep is like it not changing anymore.
 - Redefinition of effect deps only allowed after removal.
+- Invisible nodes are not removed and keep effects active.
 
 ## App Cycle
 
