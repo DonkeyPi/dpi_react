@@ -31,18 +31,18 @@ defmodule Ash.React.Timer do
   def set_interval(millis, callback) do
     {pid, count, timers} = get()
 
-    callback = fn ->
+    first = fn next ->
       ref = get_timer(count)
 
       if ref != nil do
         callback.()
-        set_timer(count, millis, callback)
+        set_timer(count, millis, fn -> next.(next) end)
       end
     end
 
     # Increment count before set_timer.
     put({pid, count + 1, timers})
-    set_timer(count, millis, callback)
+    set_timer(count, millis, fn -> first.(first) end)
     cleanup = fn -> del_timer(count) end
     fn -> App.sync(pid, cleanup) end
   end
