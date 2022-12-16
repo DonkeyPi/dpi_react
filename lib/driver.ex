@@ -5,11 +5,8 @@ defmodule Ash.React.Driver do
   # Extracts the initialized options.
   @callback opts() :: opts :: keyword()
 
-  # Checks if message is to be handled by the driver.
-  @callback handles?(msg :: any()) :: true | false
-
-  # Passes a received message to the driver.
-  @callback handle(msg :: any()) :: :ok
+  # Passes a received event to the driver.
+  @callback handle(event :: map()) :: :ok
 
   # Pushes the final model to the screen.
   @callback render(id :: any(), model :: any()) :: :ok

@@ -6,14 +6,14 @@ defmodule Tester do
 
   def on_callback() do
     receive do
-      {:react_cb, callback} ->
+      {:react_sync, _type, callback} ->
         callback.()
     end
   end
 
   def on_changes() do
     count = State.get_changes()
-    if count > 0, do: send(self(), {:react_cb, &nop/0})
+    if count > 0, do: send(self(), {:react_sync, :changes, &nop/0})
   end
 
   def effect_callback(v1, v2 \\ nil) do

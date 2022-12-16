@@ -11,7 +11,7 @@ defmodule Ash.React.Api do
 
     {value,
      fn value ->
-       App.sync(pid, fn ->
+       App.sync(pid, :setter, fn ->
          State.set_state(ids, value)
        end)
      end}
@@ -27,7 +27,7 @@ defmodule Ash.React.Api do
     State.use_callback(ids, callback)
 
     fn ->
-      App.sync(pid, fn ->
+      App.sync(pid, :callback, fn ->
         # Returns nop if not found.
         State.get_callback(ids).()
       end)

@@ -16,7 +16,7 @@ defmodule Ash.React.Timer do
 
   defp set_timer(id, millis, callback) do
     {pid, count, timers} = get()
-    ref = Process.send_after(pid, {:react_cb, callback}, millis)
+    ref = Process.send_after(pid, {:react_sync, :timer, callback}, millis)
     timers = Map.put(timers, id, ref)
     put({pid, count, timers})
   end
@@ -44,7 +44,7 @@ defmodule Ash.React.Timer do
     put({pid, count + 1, timers})
     set_timer(count, millis, fn -> first.(first) end)
     cleanup = fn -> del_timer(count) end
-    fn -> App.sync(pid, cleanup) end
+    fn -> App.sync(pid, :cleanup, cleanup) end
   end
 
   def set_timeout(millis, callback) do
@@ -62,6 +62,6 @@ defmodule Ash.React.Timer do
     put({pid, count + 1, timers})
     set_timer(count, millis, callback)
     cleanup = fn -> del_timer(count) end
-    fn -> App.sync(pid, cleanup) end
+    fn -> App.sync(pid, :cleanup, cleanup) end
   end
 end
