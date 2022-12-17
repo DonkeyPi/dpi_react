@@ -2,10 +2,21 @@ defmodule Ash.React.App do
   alias Ash.React.State
   alias Ash.React.Driver
   alias Ash.Node.Builder
+  use Ash.React.Events
+
+  @toms 2000
 
   def run(func, onevt, opts) do
     State.start()
     opts = Enum.into(opts, %{})
+
+    # wait first refresh event from driver term
+    receive do
+      @refresh_event -> :ok
+    after
+      @toms -> raise "No response timeout"
+    end
+
     update(func, opts)
     loop(onevt, func, opts)
   end
