@@ -14,7 +14,7 @@ defmodule Ash.React.App do
     receive do
       @refresh_event -> :ok
     after
-      @toms -> raise "No response timeout"
+      @toms -> raise "Refresh event timeout"
     end
 
     update(func, opts)
