@@ -12,8 +12,7 @@ defmodule Ash.React.Macros do
       import Ash.React.Helpers
       alias Ash.React.App
 
-      def run(func, opts), do: App.run(func, nil, opts)
-      def run(func, onevt, opts), do: App.run(func, onevt, opts)
+      def run(func, opts), do: App.run(func, opts)
 
       def child_spec(opts) do
         %{

@@ -6,7 +6,7 @@ defmodule Ash.React.App do
 
   @toms 2000
 
-  def run(func, onevt, opts) do
+  def run(func, opts) do
     State.start()
     opts = Enum.into(opts, %{})
 
@@ -18,7 +18,7 @@ defmodule Ash.React.App do
     end
 
     update(func, opts)
-    loop(onevt, func, opts)
+    loop(func, opts)
   end
 
   def sync(pid, type, function) do
@@ -28,34 +28,40 @@ defmodule Ash.React.App do
     end
   end
 
+  def set_handler(handler) do
+    Process.put({__MODULE__, :on_event}, handler)
+  end
+
   defp nop(), do: fn -> nil end
 
   # Reliable code should not depend
   # on proper on exit effects cleanup.
   # Port drivers may die at any time.
-  defp loop(onevt, func, opts) do
+  defp loop(func, opts) do
+    on_event = Process.get({__MODULE__, :on_event}, fn _ -> :nop end)
+
     receive do
       # Flag setters to apply immediatelly.
       {:react_sync, type, callback} ->
-        if onevt != nil, do: onevt.(%{type: :react, key: :sync, flag: type})
+        on_event.(%{type: :react, key: :sync, flag: type})
 
         callback.()
         update(func, opts)
-        loop(onevt, func, opts)
+        loop(func, opts)
 
       :react_stop ->
-        if onevt != nil, do: onevt.(%{type: :react, key: :stop})
+        on_event.(%{type: :react, key: :stop})
 
         # FIXME Attempt a clean stop.
         # Stop reason to kill state.
         Process.exit(self(), :stop)
 
       {:event, event} ->
-        if onevt != nil, do: onevt.(event)
+        on_event.(event)
 
         :ok = Driver.handle(event)
         update(func, opts)
-        loop(onevt, func, opts)
+        loop(func, opts)
 
       msg ->
         raise "Unexpected #{inspect(msg)}"
