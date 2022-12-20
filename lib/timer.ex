@@ -35,6 +35,7 @@ defmodule Ash.React.Timer do
       ref = get_timer(count)
 
       if ref != nil do
+        del_timer(count)
         callback.()
         set_timer(count, millis, fn -> next.(next) end)
       end
@@ -54,8 +55,8 @@ defmodule Ash.React.Timer do
       ref = get_timer(count)
 
       if ref != nil do
-        callback.()
         del_timer(count)
+        callback.()
       end
     end
 

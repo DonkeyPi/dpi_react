@@ -32,10 +32,12 @@ defmodule Ash.TimerTest do
 
     # check first interval wont trigger again
     timer = Api.set_interval(0, fn -> Buffer.add("b") end)
-    Tester.on_callback()
-    assert Buffer.get() == "aab"
-    Tester.on_callback()
-    assert Buffer.get() == "aabb"
+
+    for i <- 1..100 do
+      Tester.on_callback()
+      assert Buffer.get() == "aa" <> String.duplicate("b", i)
+    end
+
     timer.()
   end
 end
