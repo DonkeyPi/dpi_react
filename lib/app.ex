@@ -29,7 +29,7 @@ defmodule Ash.React.App do
   end
 
   def set_handler(handler) do
-    Process.put({__MODULE__, :on_event}, handler)
+    Process.put({__MODULE__, :handler}, handler)
   end
 
   defp nop(), do: fn -> nil end
@@ -38,26 +38,26 @@ defmodule Ash.React.App do
   # on proper on exit effects cleanup.
   # Port drivers may die at any time.
   defp loop(func, opts) do
-    on_event = Process.get({__MODULE__, :on_event}, fn _ -> :nop end)
+    handler = Process.get({__MODULE__, :handler}, fn _ -> :nop end)
 
     receive do
       # Flag setters to apply immediatelly.
       {:react_sync, type, callback} ->
-        on_event.(%{type: :react, key: :sync, flag: type})
+        handler.(%{type: :react, key: :sync, flag: type})
 
         callback.()
         update(func, opts)
         loop(func, opts)
 
       :react_stop ->
-        on_event.(%{type: :react, key: :stop})
+        handler.(%{type: :react, key: :stop})
 
         # FIXME Attempt a clean stop.
         # Stop reason to kill state.
         Process.exit(self(), :stop)
 
       {:event, event} ->
-        on_event.(event)
+        handler.(event)
 
         :ok = Driver.handle(event)
         update(func, opts)
