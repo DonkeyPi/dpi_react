@@ -4,6 +4,22 @@ defmodule Ash.React.Api do
   alias Ash.React.Timer
   alias Ash.React.Assert
 
+  def set_handler(handler) do
+    App.set_handler(handler)
+  end
+
+  def get_prop(name, value \\ nil) do
+    Process.get({__MODULE__, :prop, name}, value)
+  end
+
+  def put_prop(name, value) do
+    Process.put({__MODULE__, :prop, name}, value)
+  end
+
+  def pop_prop(name) do
+    Process.delete({__MODULE__, :prop, name})
+  end
+
   def use_state(id, initial) do
     pid = State.assert_pid()
     ids = State.append_id(id)

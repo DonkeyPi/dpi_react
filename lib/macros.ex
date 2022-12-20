@@ -1,15 +1,15 @@
 defmodule Ash.React.Macros do
   defmacro component() do
     quote do
-      import Ash.React.Api
       import Ash.React.Helpers
+      import Ash.React.Api
     end
   end
 
   defmacro app() do
     quote do
-      import Ash.React.Api
       import Ash.React.Helpers
+      import Ash.React.Api
       alias Ash.React.App
 
       def run(func, opts), do: App.run(func, opts)
@@ -77,7 +77,7 @@ defmodule Ash.React.Macros do
       end
 
       # Use monitor to avoid setting/restoring trap_exit.
-      def run_and_wait(driver, opts) do
+      def run_sync(driver, opts) do
         {:ok, pid} =
           Keyword.put(opts, :driver, driver)
           |> start_link()
