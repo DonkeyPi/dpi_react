@@ -2,21 +2,10 @@ defmodule Ash.React.App do
   alias Ash.React.State
   alias Ash.React.Driver
   alias Ash.Node.Builder
-  use Ash.React.Events
-
-  @toms 2000
 
   def run(func, opts) do
     State.start()
     opts = Enum.into(opts, %{})
-
-    # wait first refresh event from driver term
-    receive do
-      @refresh_event -> :ok
-    after
-      @toms -> raise "Refresh event timeout"
-    end
-
     update(func, opts)
     loop(func, opts)
   end
@@ -34,31 +23,18 @@ defmodule Ash.React.App do
 
   defp nop(), do: fn -> nil end
 
-  # Reliable code should not depend
-  # on proper on exit effects cleanup.
-  # Port drivers may die at any time.
   defp loop(func, opts) do
     handler = Process.get({__MODULE__, :handler}, fn _ -> :nop end)
 
     receive do
-      # Flag setters to apply immediatelly.
       {:react_sync, type, callback} ->
         handler.(%{type: :react, key: :sync, flag: type})
-
         callback.()
         update(func, opts)
         loop(func, opts)
 
-      :react_stop ->
-        handler.(%{type: :react, key: :stop})
-
-        # FIXME Attempt a clean stop.
-        # Stop reason to kill state.
-        Process.exit(self(), :stop)
-
       {:event, event} ->
         handler.(event)
-
         :ok = Driver.handle(event)
         update(func, opts)
         loop(func, opts)
@@ -69,7 +45,6 @@ defmodule Ash.React.App do
   end
 
   defp update(func, opts) do
-    # Make setters async until next forward.
     State.before_markup()
     build = fn -> func.(opts) end
     markup = Builder.build(build, &visitor/2)
