@@ -36,11 +36,11 @@ defmodule Ash.React.Macros do
         pid =
           spawn_link(fn ->
             # Pass on driver options.
-            :ok = Driver.start(driver, opts)
+            {:ok, opts} = Driver.start(driver, opts)
             # Init is the user defined function that must in
             # turn call Ash.React.App.run after adjusting opts.
             # @see ash_sample/exs/*.exs
-            Driver.opts() |> init()
+            init(opts)
           end)
 
         {:ok, pid}

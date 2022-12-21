@@ -1,9 +1,6 @@
 defmodule Ash.React.Driver do
   # Starts the driver process with an initial opts.
-  @callback start(opts :: keyword()) :: :ok
-
-  # Extracts the initialized options.
-  @callback opts() :: opts :: keyword()
+  @callback start(opts :: keyword()) :: {:ok, opts :: keyword()}
 
   # Passes a received event to the driver.
   @callback handle(event :: map()) :: :ok
@@ -23,13 +20,11 @@ defmodule Ash.React.Driver do
 
   def start(module, opts) do
     put(:module, module)
-    :ok = module.start(opts)
+    module.start(opts)
   end
 
-  def opts(), do: get(:module).opts()
   def pop(), do: get(:module).pop()
   def push(id), do: get(:module).push(id)
-  def handles?(msg), do: get(:module).handles?(msg)
   def handle(event), do: get(:module).handle(event)
   def update(ids, node), do: get(:module).update(ids, node)
   def render(id, model), do: get(:module).render(id, model)
