@@ -53,7 +53,7 @@ defmodule Ash.React.Macros do
 
         receive do
           {:EXIT, ^pid, reason} -> IO.inspect(reason)
-          msg -> raise "unexpected #{inspect(msg)}"
+          msg -> raise "Unexpected #{inspect(msg)}"
         end
       end
     end
