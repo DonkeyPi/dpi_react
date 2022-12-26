@@ -32,6 +32,7 @@ defmodule Ash.React.Macros do
         # Supervisor restart strategy.
         {delay, opts} = Keyword.pop(opts, :delay, 0)
         :timer.sleep(delay)
+        {register, opts} = Keyword.pop(opts, :register, false)
 
         pid =
           spawn_link(fn ->
@@ -42,6 +43,8 @@ defmodule Ash.React.Macros do
             # @see ash_sample/exs/*.exs
             init(opts)
           end)
+
+        if register, do: Process.register(pid, __MODULE__)
 
         {:ok, pid}
       end
