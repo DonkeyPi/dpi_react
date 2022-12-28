@@ -12,8 +12,6 @@ defmodule Ash.React.Macros do
       import Ash.React.Api
       alias Ash.React.App
 
-      def run(func, opts), do: App.run(func, opts)
-
       def child_spec(opts) do
         %{
           id: __MODULE__,
@@ -41,7 +39,8 @@ defmodule Ash.React.Macros do
             # Init is the user defined function that must in
             # turn call Ash.React.App.run after adjusting opts.
             # @see ash_sample/exs/*.exs
-            init(opts)
+            {func, opts} = init(opts)
+            App.run(func, opts)
           end)
 
         if register, do: Process.register(pid, __MODULE__)
