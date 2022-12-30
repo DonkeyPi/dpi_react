@@ -29,11 +29,11 @@ defmodule Ash.React.Macros do
         {driver, opts} = Keyword.pop!(opts, :driver)
         # Supervisor restart strategy.
         {delay, opts} = Keyword.pop(opts, :delay, 0)
-        :timer.sleep(delay)
         {register, opts} = Keyword.pop(opts, :register, false)
 
         pid =
           spawn_link(fn ->
+            if delay > 0, do: :timer.sleep(delay)
             # Pass on driver options.
             {:ok, opts} = Driver.start(driver, opts)
             # Init is the user defined function that must in
