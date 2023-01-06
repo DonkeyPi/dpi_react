@@ -1,6 +1,6 @@
-defmodule Ash.ReactTest do
+defmodule Dpi.ReactTest do
   use ExUnit.Case
-  alias Ash.React.State
+  alias Dpi.React.State
 
   test "assert pid test" do
     State.start()

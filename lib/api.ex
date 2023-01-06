@@ -1,8 +1,8 @@
-defmodule Ash.React.Api do
-  alias Ash.React.App
-  alias Ash.React.State
-  alias Ash.React.Timer
-  alias Ash.React.Assert
+defmodule Dpi.React.Api do
+  alias Dpi.React.App
+  alias Dpi.React.State
+  alias Dpi.React.Timer
+  alias Dpi.React.Assert
 
   def set_handler(handler) do
     App.set_handler(handler)

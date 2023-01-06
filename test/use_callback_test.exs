@@ -1,7 +1,7 @@
-defmodule Ash.UseCallbackTest do
+defmodule Dpi.UseCallbackTest do
   use ExUnit.Case
-  alias Ash.React.State
-  alias Ash.React.Api
+  alias Dpi.React.State
+  alias Dpi.React.Api
 
   # Callbacks are required for timers to get the value
   # of state at the time of execution instead of at

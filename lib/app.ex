@@ -1,7 +1,7 @@
-defmodule Ash.React.App do
-  alias Ash.React.State
-  alias Ash.React.Driver
-  alias Ash.Node.Builder
+defmodule Dpi.React.App do
+  alias Dpi.React.State
+  alias Dpi.React.Driver
+  alias Dpi.Node.Builder
 
   def run(func, opts) do
     State.start()

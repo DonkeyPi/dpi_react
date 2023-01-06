@@ -1,4 +1,4 @@
-defmodule Ash.React.Assert do
+defmodule Dpi.React.Assert do
   def assert_deps(nil), do: :ok
   def assert_deps(deps) when is_list(deps), do: :ok
   def assert_deps(deps), do: raise("Invalid deps #{inspect(deps)}")

@@ -1,9 +1,9 @@
-defmodule Ash.React.MixProject do
+defmodule Dpi.React.MixProject do
   use Mix.Project
 
   def project do
     [
-      app: :ash_react,
+      app: :dpi_react,
       version: "0.1.0",
       elixir: "~> 1.13",
       start_permanent: Mix.env() == :prod,
@@ -19,7 +19,7 @@ defmodule Ash.React.MixProject do
 
   defp deps do
     [
-      {:ash_node, path: "../ash_node"}
+      {:dpi_node, path: "../dpi_node"}
     ]
   end
 end

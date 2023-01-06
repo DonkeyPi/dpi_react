@@ -1,7 +1,7 @@
-defmodule Ash.UseStateTest do
+defmodule Dpi.UseStateTest do
   use ExUnit.Case
-  alias Ash.React.State
-  alias Ash.React.Api
+  alias Dpi.React.State
+  alias Dpi.React.Api
 
   test "use state test - initial honored" do
     State.start()

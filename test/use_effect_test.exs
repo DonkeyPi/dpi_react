@@ -1,7 +1,7 @@
-defmodule Ash.UseEffectTest do
+defmodule Dpi.UseEffectTest do
   use ExUnit.Case
-  alias Ash.React.State
-  alias Ash.React.Api
+  alias Dpi.React.State
+  alias Dpi.React.Api
 
   # Effects are all about guaranteed cleanups.
   # Resources that require explicit cleanup to avoid accumulating

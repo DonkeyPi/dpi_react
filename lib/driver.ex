@@ -1,4 +1,4 @@
-defmodule Ash.React.Driver do
+defmodule Dpi.React.Driver do
   # Starts the driver process with an initial opts.
   @callback start(opts :: keyword()) :: {:ok, opts :: keyword()}
 

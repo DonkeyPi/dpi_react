@@ -1,16 +1,16 @@
-defmodule Ash.React.Macros do
+defmodule Dpi.React.Macros do
   defmacro component() do
     quote do
-      import Ash.React.Helpers
-      import Ash.React.Api
+      import Dpi.React.Helpers
+      import Dpi.React.Api
     end
   end
 
   defmacro app() do
     quote do
-      import Ash.React.Helpers
-      import Ash.React.Api
-      alias Ash.React.App
+      import Dpi.React.Helpers
+      import Dpi.React.Api
+      alias Dpi.React.App
 
       def child_spec(opts) do
         %{
@@ -23,8 +23,8 @@ defmodule Ash.React.Macros do
       end
 
       def start_link(opts \\ []) do
-        alias Ash.React.App
-        alias Ash.React.Driver
+        alias Dpi.React.App
+        alias Dpi.React.Driver
         # Extract mandatory driver from app options.
         {driver, opts} = Keyword.pop!(opts, :driver)
         # Supervisor restart strategy.
@@ -37,8 +37,8 @@ defmodule Ash.React.Macros do
             # Pass on driver options.
             {:ok, opts} = Driver.start(driver, opts)
             # Init is the user defined function that must in
-            # turn call Ash.React.App.run after adjusting opts.
-            # @see ash_sample/exs/*.exs
+            # turn call Dpi.React.App.run after adjusting opts.
+            # @see dpi_sample/exs/*.exs
             {func, opts} = init(opts)
             App.run(func, opts)
           end)

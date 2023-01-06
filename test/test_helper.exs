@@ -1,7 +1,7 @@
 ExUnit.start()
 
 defmodule Tester do
-  alias Ash.React.State
+  alias Dpi.React.State
   defp nop(), do: fn -> nil end
 
   def on_callback() do

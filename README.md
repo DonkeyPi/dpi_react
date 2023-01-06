@@ -1,6 +1,6 @@
-# AppShell React
+# DonkeyPi React
 
-See `ash_sample`.
+See `dpi_sample`.
 
 ## App Rules
 

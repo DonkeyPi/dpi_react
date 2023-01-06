@@ -1,6 +1,6 @@
-defmodule Ash.HelpersTest do
+defmodule Dpi.HelpersTest do
   use ExUnit.Case
-  alias Ash.React.Helpers
+  alias Dpi.React.Helpers
 
   test "helpers test" do
     assert "1" = Helpers.hex(1)

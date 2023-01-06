@@ -1,5 +1,5 @@
-defmodule Ash.React do
-  import Ash.React.Macros
+defmodule Dpi.React do
+  import Dpi.React.Macros
 
   defmacro __using__(opts) do
     case Keyword.get(opts, :app, false) do

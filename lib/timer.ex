@@ -1,5 +1,5 @@
-defmodule Ash.React.Timer do
-  alias Ash.React.App
+defmodule Dpi.React.Timer do
+  alias Dpi.React.App
 
   def start() do
     # assert_raise may leave partial state behind
