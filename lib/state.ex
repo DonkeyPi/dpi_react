@@ -85,7 +85,11 @@ defmodule Dpi.React.State do
 
     # Get value from frozen previous state.
     # All values need to be carried on state transition.
-    value = Map.get(prev.values, id, value)
+    value =
+      cond do
+        is_function(value, 0) -> Map.get_lazy(prev.values, id, value)
+        true -> Map.get(prev.values, id, value)
+      end
 
     put({pid, curr, prev})
     value

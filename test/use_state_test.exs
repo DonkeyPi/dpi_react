@@ -3,11 +3,20 @@ defmodule Dpi.UseStateTest do
   alias Dpi.React.State
   alias Dpi.React.Api
 
-  test "use state test - initial honored" do
+  test "use state test - eager initial honored" do
     State.start()
 
     State.before_markup()
     {id, _set_id} = Api.use_state(:id, :initial)
+    assert id == :initial
+    State.after_markup()
+  end
+
+  test "use state test - lazy initial honored" do
+    State.start()
+
+    State.before_markup()
+    {id, _set_id} = Api.use_state(:id, fn -> :initial end)
     assert id == :initial
     State.after_markup()
   end
