@@ -21,22 +21,29 @@ defmodule Dpi.React.App do
     Process.put({__MODULE__, :handler}, handler)
   end
 
-  defp nop(), do: fn -> nil end
+  def set_tracer(tracer) do
+    Process.put({__MODULE__, :tracer}, tracer)
+  end
 
   defp loop(func, opts) do
-    handler = Process.get({__MODULE__, :handler}, fn _ -> :nop end)
+    handler = Process.get({__MODULE__, :handler}, &nop/1)
+    tracer = Process.get({__MODULE__, :tracer}, &nop/1)
 
     receive do
       {:react_sync, type, callback} ->
         handler.(%{type: :react, key: :sync, flag: type})
+        begin = tracer.(:begin)
         callback.()
         update(func, opts)
+        tracer.(begin)
         loop(func, opts)
 
       {:event, event} ->
         handler.(event)
+        begin = tracer.(:begin)
         :ok = Driver.handle(event)
         update(func, opts)
+        tracer.(begin)
         loop(func, opts)
 
       msg ->
@@ -76,4 +83,7 @@ defmodule Dpi.React.App do
   defp visitor(:push, id), do: State.push_id(id)
   defp visitor(:pop, _id), do: State.pop_id()
   defp visitor(:add, _id), do: :nop
+
+  defp nop(), do: :nop
+  defp nop(_), do: :nop
 end

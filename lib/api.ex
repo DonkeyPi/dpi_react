@@ -8,6 +8,10 @@ defmodule Dpi.React.Api do
     App.set_handler(handler)
   end
 
+  def set_tracer(tracer) do
+    App.set_tracer(tracer)
+  end
+
   def get_prop(name, value \\ nil) do
     Process.get({__MODULE__, :prop, name}, value)
   end
@@ -16,8 +20,14 @@ defmodule Dpi.React.Api do
     Process.put({__MODULE__, :prop, name}, value)
   end
 
-  def pop_prop(name) do
+  def delete_prop(name) do
     Process.delete({__MODULE__, :prop, name})
+  end
+
+  def update_prop(name, updater) do
+    value = Process.get({__MODULE__, :prop, name})
+    value = updater.(value)
+    Process.put({__MODULE__, :prop, name}, value)
   end
 
   def use_state(id, initial) do
